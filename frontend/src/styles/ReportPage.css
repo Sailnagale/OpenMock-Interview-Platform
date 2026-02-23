@@ -1,0 +1,361 @@
+.report-page {
+    min-height: 100vh;
+    overflow-y: auto;
+    position: relative;
+}
+
+.orb-r1 {
+    width: 500px;
+    height: 500px;
+    background: rgba(99, 102, 241, 0.14);
+    top: -100px;
+    right: -100px;
+    animation: drift 14s ease-in-out infinite alternate;
+}
+
+.orb-r2 {
+    width: 400px;
+    height: 400px;
+    background: rgba(6, 182, 212, 0.10);
+    bottom: 0;
+    left: -80px;
+    animation: drift 11s ease-in-out infinite alternate-reverse;
+}
+
+@keyframes drift {
+    to {
+        transform: translate(20px, 30px) scale(1.04);
+    }
+}
+
+.report-layout {
+    position: relative;
+    z-index: 1;
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+}
+
+/* ── Header ── */
+.report-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    text-align: center;
+}
+
+.report-header h2 {
+    font-size: 26px;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--text), var(--text-muted));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.report-type {
+    font-size: 14px;
+    color: var(--text-muted);
+}
+
+/* ── Loading ── */
+.report-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 18px;
+    padding: 60px 0;
+    color: var(--text-muted);
+    font-size: 15px;
+}
+
+/* ── Error ── */
+.report-error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    padding: 40px;
+    text-align: center;
+    color: var(--red);
+}
+
+/* ── Score Ring ── */
+.score-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.score-ring-wrapper {
+    position: relative;
+    width: 150px;
+    height: 150px;
+}
+
+.score-svg {
+    width: 150px;
+    height: 150px;
+}
+
+.score-value {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 38px;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.score-denom {
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--text-muted);
+}
+
+.score-label {
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+}
+
+.score-badge {
+    padding: 6px 18px;
+    border-radius: 99px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.score-badge.good {
+    background: rgba(16, 185, 129, 0.15);
+    border: 1px solid rgba(16, 185, 129, 0.35);
+    color: var(--green);
+}
+
+.score-badge.mid {
+    background: rgba(245, 158, 11, 0.15);
+    border: 1px solid rgba(245, 158, 11, 0.35);
+    color: var(--yellow);
+}
+
+.score-badge.low {
+    background: rgba(239, 68, 68, 0.12);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: var(--red);
+}
+
+/* ── Results Breakdown ── */
+.results-breakdown {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+}
+
+.results-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 16px;
+}
+
+.results-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.stat-card {
+    padding: 14px;
+    border-radius: 10px;
+    text-align: center;
+    border: 1px solid var(--border);
+}
+
+.stat-num {
+    font-size: 28px;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.stat-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    margin-top: 6px;
+}
+
+.stat-pass {
+    background: rgba(16, 185, 129, 0.08);
+}
+
+.stat-pass .stat-num {
+    color: var(--green);
+}
+
+.stat-partial {
+    background: rgba(245, 158, 11, 0.08);
+}
+
+.stat-partial .stat-num {
+    color: var(--yellow);
+}
+
+.stat-fail {
+    background: rgba(239, 68, 68, 0.08);
+}
+
+.stat-fail .stat-num {
+    color: var(--red);
+}
+
+.stat-avg {
+    background: rgba(99, 102, 241, 0.08);
+}
+
+.stat-avg .stat-num {
+    color: var(--accent);
+}
+
+.results-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.result-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    border: 1px solid var(--border);
+}
+
+.result-row.verdict-pass {
+    background: rgba(16, 185, 129, 0.04);
+}
+
+.result-row.verdict-partial {
+    background: rgba(245, 158, 11, 0.04);
+}
+
+.result-row.verdict-fail {
+    background: rgba(239, 68, 68, 0.04);
+}
+
+.result-q {
+    font-weight: 700;
+    min-width: 32px;
+    color: var(--text-muted);
+}
+
+.result-icon {
+    font-size: 14px;
+}
+
+.result-verdict {
+    font-weight: 600;
+    min-width: 60px;
+}
+
+.result-score {
+    font-weight: 500;
+    min-width: 48px;
+    color: var(--text-muted);
+}
+
+.result-feedback {
+    flex: 1;
+    color: var(--text-muted);
+    font-size: 12px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ── Report Body ── */
+.report-body {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.report-heading {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--accent-2);
+    margin-top: 18px;
+    margin-bottom: 6px;
+}
+
+.report-heading:first-child {
+    margin-top: 0;
+}
+
+.report-numbered {
+    font-size: 14px;
+    color: var(--text);
+    padding: 4px 0;
+}
+
+.report-bullet {
+    font-size: 14px;
+    color: var(--text);
+    padding: 2px 0 2px 16px;
+    position: relative;
+}
+
+.report-bullet::before {
+    content: '•';
+    position: absolute;
+    left: 4px;
+    color: var(--accent);
+}
+
+.report-bold {
+    font-size: 14px;
+    color: var(--text);
+    padding: 3px 0;
+}
+
+.report-line {
+    font-size: 14px;
+    color: var(--text);
+    line-height: 1.65;
+}
+
+.report-spacer {
+    height: 10px;
+}
+
+/* ── Actions ── */
+.report-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.report-actions .btn-primary {
+    width: auto;
+    padding: 11px 28px;
+}
+
+.report-actions .btn-ghost {
+    padding: 10px 22px;
+}
