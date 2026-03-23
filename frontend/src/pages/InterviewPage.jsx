@@ -82,7 +82,7 @@ export default function InterviewPage() {
         try {
             const res = await axios.post(`${backendUrl}/generate-questions`, {
                 job_role: role,
-                count: 30,
+                count: 2,
             });
             const qs = res.data.questions;
             setQuestions(qs);

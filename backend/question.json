@@ -1,0 +1,26 @@
+{
+  "hr": [
+    {
+      "id": "hr_1",
+      "question": "Tell me about a time you handled a conflict within a team project."
+    },
+    {
+      "id": "hr_2",
+      "question": "Why do you want to join this specific role as a Data Science intern?"
+    }
+  ],
+  "technical": [
+    {
+      "id": "cb_1",
+      "question": "Write a function that takes an integer N and returns the sum of all numbers from 1 to N."
+    },
+    {
+      "id": "cb_2",
+      "question": "Given an array of integers, write a loop to find and return the largest element."
+    },
+    {
+      "id": "ll_1",
+      "question": "Print numbers from 1 to 20. If divisible by 3, print 'Fizz'; if by 5, print 'Buzz'; if both, print 'FizzBuzz'."
+    }
+  ]
+}
