@@ -1,0 +1,20 @@
+# Credentials & Secrets
+.env
+.env.local
+
+# Python caches
+__pycache__/
+*.py[cod]
+
+# Virtual Environments
+venv/
+env/
+.venv/
+
+# IDE specific files
+.vscode/
+.idea/
+
+# Local model storage (optional)
+# *.bin
+# *.gguf

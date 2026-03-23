@@ -17,25 +17,45 @@ export default function ReportPage() {
         generateReport();
     }, []);
 
-    const generateReport = async () => {
-        setLoading(true);
-        setError('');
-        try {
-            const res = await axios.post(`${backendUrl}/generate-final-report`, {
-                transcript: history,
-                technical_critiques: technicalCritiques,
-                question_results: questionResults.filter(Boolean),
-            });
-            const text = res.data.report;
-            setReport(text);
-            const match = text.match(/(\d{1,3})\s*\/\s*100/);
-            if (match) setScore(parseInt(match[1], 10));
-        } catch (err) {
-            setError('⚠️ Could not generate report. Make sure the backend is running.');
-        } finally {
-            setLoading(false);
-        }
-    };
+const generateReport = async () => {
+  setLoading(true);
+  setError("");
+
+  try {
+    const res = await axios.post(`${backendUrl}/generate-final-report`, {
+      transcript: history,
+      technical_critiques: technicalCritiques,
+      question_results: questionResults.filter(Boolean),
+    });
+
+    console.log("Report API response:", res.data);
+
+    if (!res.data || !res.data.report) {
+      throw new Error("Invalid response from backend");
+    }
+
+    const text = res.data.report;
+
+    setReport(text);
+
+    const match = text.match(/(\d{1,3})\s*\/\s*100/);
+    if (match) setScore(parseInt(match[1], 10));
+  } catch (err) {
+    console.error("Report error:", err);
+
+    if (err.response) {
+      setError(
+        `⚠️ Backend error: ${err.response.data?.detail || "Unknown error"}`,
+      );
+    } else if (err.request) {
+      setError("⚠️ Backend unreachable. Check if FastAPI is running.");
+    } else {
+      setError(`⚠️ ${err.message}`);
+    }
+  } finally {
+    setLoading(false);
+  }
+};
 
     const handleRestart = () => { reset(); navigate('/'); };
     const handleCopy = () => { navigator.clipboard.writeText(report); };

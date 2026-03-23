@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>IntelliView Pro - Test Bench</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f7f6; padding: 40px; }
+        .container { max-width: 800px; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .section { margin-bottom: 30px; border-bottom: 1px solid #eee; padding-bottom: 20px; }
+        textarea, input { width: 100%; margin: 10px 0; padding: 10px; border: 1px solid #ddd; border-radius: 5px; }
+        button { background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        #log { background: #222; color: #0f0; padding: 15px; border-radius: 5px; height: 200px; overflow-y: auto; font-family: monospace; }
+        .report-box { white-space: pre-wrap; background: #fff3cd; padding: 15px; border-left: 5px solid #ffc107; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>IntelliView Pro Testing UI</h1>
+
+    <div class="section">
+        <h3>1. Interview Flow (Voice Ready)</h3>
+        <p>Type "Hello" to start or answer a question. AI will use Text-to-Speech.</p>
+        <input id="current_q" placeholder="Enter Question ID (e.g., hr_1)" value="hr_1">
+        <input id="userInput" placeholder="Your Answer...">
+        <button onclick="handleInterview()">Send Answer</button>
+        <div id="voiceStatus" style="font-size: 0.8em; color: gray;"></div>
+    </div>
+
+    <div class="section">
+        <h3>2. Coding Round Analysis</h3>
+        <textarea id="codeBody" rows="5">def add(a, b): return a + b</textarea>
+        <button onclick="runCodeAnalysis()">Submit Code to LM Studio</button>
+        <div id="codeFollowUp" style="color: #d9534f; margin-top: 10px; font-weight: bold;"></div>
+    </div>
+
+    <div class="section">
+        <h3>3. Final Report</h3>
+        <button onclick="generateReport()" style="background: #28a745;">Generate Score & Roadmap</button>
+        <div id="reportResult" class="report-box" style="display:none; margin-top: 20px;"></div>
+    </div>
+
+    <h3>System Logs</h3>
+    <div id="log">Waiting for action...</div>
+</div>
+
+<script>
+    let chatHistory = [];
+    let technicalCritiques = [];
+    const API_BASE = "http://127.0.0.1:8000";
+
+    // --- AI Voice Synthesis ---
+    function speak(text) {
+        window.speechSynthesis.cancel(); // Stop current speech
+        const msg = new SpeechSynthesisUtterance(text);
+        msg.onstart = () => document.getElementById('voiceStatus').innerText = "AI is speaking...";
+        msg.onend = () => document.getElementById('voiceStatus').innerText = "";
+        window.speechSynthesis.speak(msg);
+    }
+
+    async function handleInterview() {
+        const input = document.getElementById('userInput').value;
+        const q_id = document.getElementById('current_q').value;
+        
+        const res = await fetch(`${API_BASE}/start-or-followup`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                user_input: input,
+                history: chatHistory,
+                interview_type: 'hr',
+                current_question_id: q_id
+            })
+        });
+
+        if (chatHistory.length === 0 && !input) {
+            const data = await res.json();
+            document.getElementById('log').innerHTML += `<br>AI: ${data.content}`;
+            speak(data.content);
+            chatHistory.push(data);
+        } else {
+            const reader = res.body.getReader();
+            let fullText = "";
+            document.getElementById('log').innerHTML += `<br>You: ${input}<br>AI: `;
+            while (true) {
+                const {done, value} = await reader.read();
+                if (done) break;
+                let chunk = new TextDecoder().decode(value);
+                fullText += chunk;
+                document.getElementById('log').innerHTML += chunk;
+            }
+            speak(fullText);
+            chatHistory.push({role: "user", content: input});
+            chatHistory.push({role: "assistant", content: fullText});
+        }
+        document.getElementById('userInput').value = "";
+    }
+
+    async function runCodeAnalysis() {
+        const code = document.getElementById('codeBody').value;
+        document.getElementById('log').innerHTML += `<br>System: Analyzing code...`;
+        
+        const res = await fetch(`${API_BASE}/analyze-code-and-ask`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                code: code,
+                language: 'python',
+                lm_studio_url: 'http://localhost:1234'
+            })
+        });
+        const data = await res.json();
+        document.getElementById('codeFollowUp').innerText = "AI Follow-up: " + data.interviewer_question;
+        document.getElementById('log').innerHTML += `<br>AI (on code): ${data.interviewer_question}`;
+        speak(data.interviewer_question);
+        
+        technicalCritiques.push(data.technical_critique_hidden);
+        chatHistory.push({role: "assistant", content: data.interviewer_question});
+    }
+
+    async function generateReport() {
+        document.getElementById('log').innerHTML += `<br>System: Generating Final Report...`;
+        const res = await fetch(`${API_BASE}/generate-final-report`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                transcript: chatHistory,
+                technical_critiques: technicalCritiques
+            })
+        });
+        const data = await res.json();
+        const reportDiv = document.getElementById('reportResult');
+        reportDiv.style.display = "block";
+        reportDiv.innerText = data.report;
+    }
+</script>
+
+</body>
+</html>
