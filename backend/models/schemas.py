@@ -6,10 +6,13 @@ class Message(BaseModel):
     content: str
 
 class InterviewState(BaseModel):
-    user_input: str
+    user_input: Optional[str] = ""   # ✅ make optional
     history: List[Message]
     interview_type: str
     current_question_id: Optional[str] = None
+
+    # ✅ ADD THIS
+    audio_input: Optional[str] = None
 
 class CodeAnalysisRequest(BaseModel):
     code: str
