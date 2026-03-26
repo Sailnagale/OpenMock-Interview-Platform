@@ -34,6 +34,7 @@ export default function InterviewPage() {
   const [initialized, setInitialized] = useState(false);
 
   const messagesEndRef = useRef(null);
+  const effectRan = useRef(false);
   const inputRef = useRef(null);
   const isTechnical = interviewType === "technical";
 
@@ -47,159 +48,51 @@ export default function InterviewPage() {
   }, [history, streamingText]);
 
   useEffect(() => {
-    if (initialized) return;
+    if (effectRan.current || initialized) return;
     setInitialized(true);
+    effectRan.current = true;
 
-    if (!isTechnical) {
-      const startInterview = async () => {
+    const startInterview = async () => {
+      const displayRole = jobRole || "Software Engineer";
+      if (!isTechnical) {
         try {
           const res = await axios.post(`${backendUrl}/start-or-followup`, {
             user_input: "",
             history: [],
             interview_type: interviewType,
+            job_role: displayRole,
             current_question_id: currentQuestionId,
           });
-          addMessage("assistant", res.data.content);
+          if (res.data?.content) addMessage("assistant", res.data.content);
         } catch {
-          addMessage("assistant", "⚠️ Backend not running");
+          addMessage("assistant", "⚠️ Backend connection failed.");
         }
-      };
-      startInterview();
-    } else {
-      setPhase("intro");
-      addMessage(
-        "assistant",
-        "👋 Welcome to Technical Interview!\nWhat role are you applying for?",
-      );
-    }
+      } else {
+        setPhase("intro");
+        addMessage(
+          "assistant",
+          `👋 Welcome to your Technical Interview for the **${displayRole}** position. Let's begin!`,
+        );
+      }
+    };
+    startInterview();
   }, []);
 
-  // ================= VOICE LOGIC =================
-  const startRecording = async () => {
-    if (isRecording || isSending) return;
-
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-        },
-      });
-
-      const recorder = new MediaRecorder(stream);
-      mediaRecorderRef.current = recorder;
-      audioChunksRef.current = [];
-
-      recorder.ondataavailable = (e) => {
-        if (e.data.size > 0) audioChunksRef.current.push(e.data);
-      };
-
-      recorder.onstop = handleVoiceSend;
-      recorder.start();
-      setIsRecording(true);
-    } catch (err) {
-      console.error(err);
-      addMessage("assistant", "⚠️ Mic permission denied or hardware error");
+  const handleEndInterview = () => {
+    if (
+      window.confirm("Ready to wrap up? This will generate your final report.")
+    ) {
+      navigate("/report");
     }
   };
 
-  const stopRecording = () => {
-    if (mediaRecorderRef.current?.state !== "inactive") {
-      mediaRecorderRef.current.stop();
-    }
-    setIsRecording(false);
-  };
-
-  const handleVoiceSend = async () => {
-    if (!audioChunksRef.current.length) return;
-
-    setIsSending(true);
-    setStreamingText("");
-
-    const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
-    const base64Audio = await new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(blob);
-      reader.onloadend = () => resolve(reader.result.split(",")[1]);
-    });
-
-    try {
-      const res = await fetch(`${backendUrl}/voice-interview`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          audio_input: base64Audio,
-          history,
-          interview_type: interviewType,
-        }),
-      });
-
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let assistantFullText = "";
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        const chunk = decoder.decode(value);
-        const lines = chunk.split(/\n+/);
-
-        for (const line of lines) {
-          const cleanedLine = line.trim();
-          if (!cleanedLine.startsWith("data:")) continue;
-
-          const rawJson = cleanedLine.replace("data:", "").trim();
-          try {
-            const data = JSON.parse(rawJson);
-
-            // ✅ SHOW USER RESPONSE
-            if (data.user_transcription && data.user_transcription !== "...") {
-              addMessage("user", data.user_transcription);
-            }
-
-            // ✅ SHOW AI RESPONSE (STREAMING)
-            if (data.text) {
-              assistantFullText += data.text;
-              setStreamingText(assistantFullText);
-
-              if (data.audio) {
-                const audio = new Audio("data:audio/mp3;base64," + data.audio);
-                await new Promise((resolve) => {
-                  audio.onended = resolve;
-                  audio.play();
-                });
-              }
-            }
-          } catch (e) {
-            console.warn("Could not parse JSON chunk", e);
-          }
-        }
-      }
-
-      if (assistantFullText) {
-        addMessage("assistant", assistantFullText);
-      }
-      setStreamingText("");
-    } catch (err) {
-      console.error("Voice Error:", err);
-      addMessage("assistant", "⚠️ Voice connection failed");
-    } finally {
-      setIsSending(false);
-    }
-  };
-
-  // ================= TEXT LOGIC =================
   const sendMessage = async () => {
     const text = userInput.trim();
     if (!text || isSending) return;
-
     addMessage("user", text);
     setUserInput("");
     setIsSending(true);
     setStreamingText("");
-
     try {
       const res = await fetch(`${backendUrl}/start-or-followup`, {
         method: "POST",
@@ -208,119 +101,197 @@ export default function InterviewPage() {
           user_input: text,
           history,
           interview_type: interviewType,
-          current_question_id: null,
+          job_role: jobRole,
         }),
       });
-
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let full = "";
-
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-
-        const chunk = decoder.decode(value);
-        full += chunk;
+        full += decoder.decode(value);
         setStreamingText(full);
       }
-
       addMessage("assistant", full);
       setStreamingText("");
     } catch {
-      addMessage("assistant", "⚠️ Network error");
+      addMessage("assistant", "⚠️ Network error.");
     } finally {
       setIsSending(false);
     }
   };
 
-  const handleKey = (e) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = recorder;
+      audioChunksRef.current = [];
+      recorder.ondataavailable = (e) => audioChunksRef.current.push(e.data);
+      recorder.onstop = handleVoiceSend;
+      recorder.start();
+      setIsRecording(true);
+    } catch {
+      addMessage("assistant", "⚠️ Mic error.");
+    }
+  };
+
+  const handleVoiceSend = async () => {
+    setIsSending(true);
+    const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+    const base64 = await new Promise((r) => {
+      const fr = new FileReader();
+      fr.readAsDataURL(blob);
+      fr.onloadend = () => r(fr.result.split(",")[1]);
+    });
+    try {
+      const res = await fetch(`${backendUrl}/voice-interview`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          audio_input: base64,
+          history,
+          interview_type: interviewType,
+          job_role: jobRole,
+        }),
+      });
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let fullText = "";
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const lines = decoder.decode(value).split("\n");
+        for (const line of lines) {
+          if (!line.startsWith("data:")) continue;
+          const data = JSON.parse(line.replace("data:", ""));
+          if (data.user_transcription)
+            addMessage("user", data.user_transcription);
+          if (data.text) {
+            fullText += data.text;
+            setStreamingText(fullText);
+            if (data.audio) {
+              const audio = new Audio("data:audio/mp3;base64," + data.audio);
+              await new Promise((res) => {
+                audio.onended = res;
+                audio.play();
+              });
+            }
+          }
+        }
+      }
+      addMessage("assistant", fullText);
+    } catch {
+      addMessage("assistant", "⚠️ Voice failed.");
+    } finally {
+      setIsSending(false);
+      setStreamingText("");
     }
   };
 
   const goToQuestion = (idx) => {
-    if (idx < 0 || idx >= questions.length) return;
     setCurrentQuestionIdx(idx);
-    addMessage("assistant", `Question ${idx + 1}: ${questions[idx]}`);
+    addMessage("assistant", `📝 Question ${idx + 1}: ${questions[idx]}`);
   };
 
   const handleSubmitResult = (result) => {
     addQuestionResult(currentQuestionIdx, result);
-    addMessage("assistant", `${result.verdict} - Score: ${result.score}`);
+    addMessage(
+      "assistant",
+      `Verdict: ${result.verdict} | Score: ${result.score}`,
+    );
   };
 
   const isQuizMode = isTechnical && phase === "quiz";
 
   return (
     <div className={`interview-layout ${isQuizMode ? "quiz-mode" : ""}`}>
-      {isQuizMode && (
-        <QuestionTracker
-          questions={questions}
-          results={questionResults}
-          currentIdx={currentQuestionIdx}
-          onSelect={goToQuestion}
-        />
-      )}
+      {/* --- TOP NAV BAR --- */}
+      <header className="interview-top-bar">
+        <div className="logo-section">⚡ OpenMock</div>
+        <div className="session-info">
+          <span className="badge">{interviewType.toUpperCase()} ROUND</span>
+          <button className="btn-end-session" onClick={handleEndInterview}>
+            Finish Interview
+          </button>
+        </div>
+      </header>
 
-      <div className="panel panel-chat">
-        <div className="chat-messages">
-          {history.map((msg, i) => (
-            <ChatMessage key={i} role={msg.role} content={msg.content} />
-          ))}
-          {streamingText && (
-            <ChatMessage role="assistant" content={streamingText} />
-          )}
-          <div ref={messagesEndRef} />
+      {/* --- PANELS CONTAINER --- */}
+      <div className="panels-container">
+        {isQuizMode && (
+          <QuestionTracker
+            questions={questions}
+            results={questionResults}
+            currentIdx={currentQuestionIdx}
+            onSelect={goToQuestion}
+          />
+        )}
+
+        {/* LEFT: CHAT */}
+        <div className="panel panel-chat">
+          <div className="chat-messages">
+            {history.map((msg, i) => (
+              <ChatMessage key={i} role={msg.role} content={msg.content} />
+            ))}
+            {streamingText && (
+              <ChatMessage role="assistant" content={streamingText} />
+            )}
+            <div ref={messagesEndRef} />
+          </div>
+
+          <div className="chat-input-area">
+            <textarea
+              className="chat-textarea"
+              placeholder="Type your answer..."
+              value={userInput}
+              onChange={(e) => setUserInput(e.target.value)}
+              onKeyDown={(e) =>
+                e.key === "Enter" && !e.shiftKey && sendMessage()
+              }
+              disabled={isSending}
+            />
+            <div className="input-controls">
+              <button
+                className={`btn-mic ${isRecording ? "recording" : ""}`}
+                onClick={() =>
+                  isRecording
+                    ? mediaRecorderRef.current.stop()
+                    : startRecording()
+                }
+              >
+                {isRecording ? "⏹️" : "🎤"}
+              </button>
+              <button
+                className="btn-send"
+                onClick={sendMessage}
+                disabled={isSending}
+              >
+                Send
+              </button>
+            </div>
+          </div>
         </div>
 
-        <div className="chat-input-area">
-          <textarea
-            ref={inputRef}
-            className="chat-textarea"
-            placeholder={
-              isSending ? "AI is thinking..." : "Type your answer..."
-            }
-            value={userInput}
-            disabled={isSending}
-            onChange={(e) => setUserInput(e.target.value)}
-            onKeyDown={handleKey}
+        {/* RIGHT: CODE EDITOR */}
+        <div className="panel panel-editor">
+          <CodeEditor
+            backendUrl={backendUrl}
+            lmStudioUrl={lmStudioUrl}
+            onCritique={addCritique}
+            onQuestion={(q) => addMessage("assistant", q)}
+            isTechnical={isTechnical}
+            isQuizMode={isQuizMode}
+            currentQuestion={questions[currentQuestionIdx] || ""}
+            currentIdx={currentQuestionIdx}
+            totalQuestions={questions.length}
+            jobRole={jobRole}
+            onSubmitResult={handleSubmitResult}
+            lastResult={questionResults[currentQuestionIdx] || null}
           />
-
-          <button
-            className={`btn-mic ${isRecording ? "recording" : ""} ${isSending ? "disabled" : ""}`}
-            onClick={isRecording ? stopRecording : startRecording}
-            disabled={isSending}
-          >
-            {isRecording ? "⏹️ Stop" : "🎤 Mic"}
-          </button>
-
-          <button
-            className="btn-send"
-            onClick={sendMessage}
-            disabled={isSending || isRecording}
-          >
-            {isSending ? "..." : "Send"}
-          </button>
         </div>
       </div>
-
-      <CodeEditor
-        backendUrl={backendUrl}
-        lmStudioUrl={lmStudioUrl}
-        onCritique={addCritique}
-        onQuestion={(q) => addMessage("assistant", q)}
-        isTechnical={isTechnical}
-        isQuizMode={isQuizMode}
-        currentQuestion={questions[currentQuestionIdx] || ""}
-        currentIdx={currentQuestionIdx}
-        totalQuestions={questions.length}
-        jobRole={jobRole}
-        onSubmitResult={handleSubmitResult}
-        lastResult={questionResults[currentQuestionIdx] || null}
-      />
     </div>
   );
 }

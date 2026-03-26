@@ -1,17 +1,97 @@
+/* ================= GLOBAL CONFIG ================= */
+:root {
+    --bg: #0a0f1c;
+    --surface: #111827;
+    --border: rgba(255, 255, 255, 0.08);
+    --accent: #6366f1;
+    --accent-2: #a855f7;
+    --text-muted: #94a3b8;
+    --radius-md: 12px;
+    --nav-height: 65px;
+    --green: #10b981;
+}
+
 /* ================= GLOBAL LAYOUT ================= */
 .interview-layout {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
+    display: flex;
+    flex-direction: column;
     height: 100vh;
+    width: 100vw;
+    background-color: var(--bg);
+    overflow: hidden;
+}
+
+/* Container for the panels below the Nav */
+.panels-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* Chat Left, Editor Right */
+    gap: 16px;
+    flex: 1;
     padding: 16px;
     box-sizing: border-box;
-    background-color: var(--bg);
+    overflow: hidden;
 }
 
 /* Quiz mode: 3-panel layout */
-.interview-layout.quiz-mode {
+.interview-layout.quiz-mode .panels-container {
     grid-template-columns: 200px 1fr 1fr;
+}
+
+/* ================= SLEEK NAV BAR ================= */
+.interview-top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 2rem;
+    height: var(--nav-height);
+    background: rgba(15, 23, 42, 0.9);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border);
+    z-index: 1000;
+}
+
+.logo-section {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 700;
+    font-size: 1.25rem;
+    background: linear-gradient(90deg, #fff, #94a3b8);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.session-info {
+    display: flex;
+    align-items: center;
+    gap: 1.2rem;
+}
+
+.badge {
+    background: rgba(99, 102, 241, 0.15);
+    color: #818cf8;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border: 1px solid rgba(99, 102, 241, 0.3);
+}
+
+.btn-end-session {
+    background: transparent;
+    color: #f87171;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    padding: 6px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.btn-end-session:hover {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: #ef4444;
 }
 
 /* ================= CHAT PANEL ================= */
@@ -33,12 +113,11 @@
     flex-direction: column;
     gap: 14px;
     scroll-behavior: smooth;
+    min-height: 0; /* Important for grid scrolling */
 }
 
 /* Custom Scrollbar for Chat */
-.chat-messages::-webkit-scrollbar {
-    width: 6px;
-}
+.chat-messages::-webkit-scrollbar { width: 6px; }
 .chat-messages::-webkit-scrollbar-thumb {
     background: var(--border);
     border-radius: 10px;
@@ -77,7 +156,7 @@
     50% { opacity: 0.6; transform: scale(0.85); }
 }
 
-/* ================= INPUT AREA (THE FIXES) ================= */
+/* ================= INPUT AREA ================= */
 .chat-input-area {
     flex-shrink: 0;
     display: flex;
@@ -94,7 +173,7 @@
     background: var(--bg);
     border: 1px solid var(--border);
     border-radius: 8px;
-    color: #ffffff; /* FIX: Visible text on dark backgrounds */
+    color: #ffffff;
     font-family: inherit;
     font-size: 14px;
     padding: 12px;
@@ -109,20 +188,22 @@
     background: rgba(255, 255, 255, 0.03);
 }
 
-.chat-textarea::placeholder {
-    color: var(--text-muted);
-}
-
-/* OVERLAP FIX: Hard lock for buttons/input */
+/* Hard lock for buttons/input when sending */
 .chat-textarea:disabled,
 .btn-send:disabled,
 .btn-mic:disabled {
     opacity: 0.4;
     cursor: not-allowed !important;
-    pointer-events: none; /* User cannot physically click */
+    pointer-events: none;
 }
 
 /* ================= BUTTONS ================= */
+.input-controls {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
 .btn-send {
     width: 44px;
     height: 44px;
@@ -149,7 +230,7 @@
     min-width: 44px;
     border-radius: 10px;
     border: none;
-    background: #2d2d3d; /* Darker base for mic */
+    background: #2d2d3d;
     color: #fff;
     display: flex;
     align-items: center;
@@ -165,7 +246,6 @@
     border-color: var(--accent);
 }
 
-/* RECORDING STATE */
 .btn-mic.recording {
     background: linear-gradient(135deg, #ef4444, #dc2626);
     border-color: transparent;
@@ -221,19 +301,12 @@
     to { opacity: 1; }
 }
 
-.btn-end {
-    margin-left: auto;
-    color: #ef4444 !important;
-    background: transparent;
-    border: 1px solid rgba(239, 68, 68, 0.3);
-    padding: 6px 12px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 13px;
-    transition: all 0.2s;
+/* Hide double welcome message caused by React StrictMode init */
+.chat-messages > div:nth-child(2) {
+    display: none !important;
 }
 
-.btn-end:hover {
-    background: rgba(239, 68, 68, 0.1);
-    border-color: #ef4444;
+/* Ensure the Code Editor panel fills its height correctly */
+.panel-editor {
+    height: 100%;
 }
