@@ -33,12 +33,13 @@ export default function InterviewPage() {
   const [streamingText, setStreamingText] = useState("");
   const [initialized, setInitialized] = useState(false);
 
+  const [timeLeft, setTimeLeft] = useState(1800);
+  const timerRef = useRef(null);
+
   const messagesEndRef = useRef(null);
   const effectRan = useRef(false);
-  const inputRef = useRef(null);
   const isTechnical = interviewType === "technical";
 
-  // ================= VOICE STATES =================
   const [isRecording, setIsRecording] = useState(false);
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
@@ -46,6 +47,31 @@ export default function InterviewPage() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [history, streamingText]);
+
+  // ================= TIMER LOGIC =================
+  useEffect(() => {
+    if (!initialized) return;
+
+    timerRef.current = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 0) {
+          clearInterval(timerRef.current);
+          alert("Time is up! Redirecting to your report.");
+          navigate("/report");
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timerRef.current);
+  }, [initialized, navigate]);
+
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
+  };
 
   // ================= INITIALIZATION =================
   useEffect(() => {
@@ -55,17 +81,9 @@ export default function InterviewPage() {
 
     const startInterview = async () => {
       const displayRole = jobRole || "Software Engineer";
-
       try {
-        console.log(
-          "🚀 Starting interview for role:",
-          displayRole,
-          "Type:",
-          interviewType,
-        );
-        // Unified Backend Call for all interview types
         const res = await axios.post(`${backendUrl}/start-or-followup`, {
-          user_input: "", // Triggers initial AI greeting
+          user_input: "",
           history: [],
           interview_type: interviewType,
           job_role: displayRole,
@@ -76,19 +94,13 @@ export default function InterviewPage() {
           addMessage("assistant", res.data.content);
         }
 
-        // If technical, move to quiz phase so Code Editor/Tracker appear
         if (isTechnical) {
           setPhase("quiz");
         }
       } catch (err) {
-        console.error("Initialization Error:", err);
-        addMessage(
-          "assistant",
-          "⚠️ Backend connection failed. Please check if your server is running.",
-        );
+        addMessage("assistant", "⚠️ Backend connection failed.");
       }
     };
-
     startInterview();
   }, []);
 
@@ -100,7 +112,6 @@ export default function InterviewPage() {
     }
   };
 
-  // ================= TEXT LOGIC =================
   const sendMessage = async () => {
     const text = userInput.trim();
     if (!text || isSending) return;
@@ -137,31 +148,51 @@ export default function InterviewPage() {
     }
   };
 
-  // ================= VOICE LOGIC =================
+  // ================= VOICE LOGIC (FIXED) =================
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const recorder = new MediaRecorder(stream);
       mediaRecorderRef.current = recorder;
       audioChunksRef.current = [];
-      recorder.ondataavailable = (e) => audioChunksRef.current.push(e.data);
-      recorder.onstop = handleVoiceSend;
+
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) audioChunksRef.current.push(e.data);
+      };
+
+      recorder.onstop = () => {
+        // Stop all hardware tracks (turns off the microphone light)
+        stream.getTracks().forEach((track) => track.stop());
+        handleVoiceSend();
+      };
+
       recorder.start();
       setIsRecording(true);
-    } catch {
-      addMessage("assistant", "⚠️ Mic error.");
+    } catch (err) {
+      console.error("Mic error:", err);
+      addMessage(
+        "assistant",
+        "⚠️ Mic error. Please ensure permissions are granted.",
+      );
+      setIsRecording(false);
     }
   };
 
   const handleVoiceSend = async () => {
+    if (audioChunksRef.current.length === 0) {
+      setIsRecording(false);
+      return;
+    }
+
     setIsSending(true);
-    const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
-    const base64 = await new Promise((r) => {
-      const fr = new FileReader();
-      fr.readAsDataURL(blob);
-      fr.onloadend = () => r(fr.result.split(",")[1]);
-    });
     try {
+      const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+      const base64 = await new Promise((resolve) => {
+        const fr = new FileReader();
+        fr.readAsDataURL(blob);
+        fr.onloadend = () => resolve(fr.result.split(",")[1]);
+      });
+
       const res = await fetch(`${backendUrl}/voice-interview`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -172,18 +203,24 @@ export default function InterviewPage() {
           job_role: jobRole,
         }),
       });
+
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let fullText = "";
+
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
+
         const lines = decoder.decode(value).split("\n");
         for (const line of lines) {
           if (!line.startsWith("data:")) continue;
           const data = JSON.parse(line.replace("data:", ""));
-          if (data.user_transcription)
+
+          if (data.user_transcription) {
             addMessage("user", data.user_transcription);
+          }
+
           if (data.text) {
             fullText += data.text;
             setStreamingText(fullText);
@@ -198,15 +235,16 @@ export default function InterviewPage() {
         }
       }
       addMessage("assistant", fullText);
-    } catch {
-      addMessage("assistant", "⚠️ Voice failed.");
+    } catch (err) {
+      console.error("Voice Error:", err);
+      addMessage("assistant", "⚠️ Voice processing failed.");
     } finally {
       setIsSending(false);
+      setIsRecording(false); // Explicitly reset UI
       setStreamingText("");
     }
   };
 
-  // ================= UTILS =================
   const goToQuestion = (idx) => {
     setCurrentQuestionIdx(idx);
     addMessage("assistant", `📝 Question ${idx + 1}: ${questions[idx]}`);
@@ -224,10 +262,12 @@ export default function InterviewPage() {
 
   return (
     <div className={`interview-layout ${isQuizMode ? "quiz-mode" : ""}`}>
-      {/* --- TOP NAV BAR --- */}
       <header className="interview-top-bar">
         <div className="logo-section">⚡ OpenMock</div>
         <div className="session-info">
+          <div className={`timer-display ${timeLeft < 300 ? "urgent" : ""}`}>
+            {formatTime(timeLeft)}
+          </div>
           <span className="badge">{interviewType.toUpperCase()} ROUND</span>
           <button className="btn-end-session" onClick={handleEndInterview}>
             Finish Interview
@@ -235,7 +275,6 @@ export default function InterviewPage() {
         </div>
       </header>
 
-      {/* --- PANELS CONTAINER --- */}
       <div className="panels-container">
         {isQuizMode && (
           <QuestionTracker
@@ -246,7 +285,6 @@ export default function InterviewPage() {
           />
         )}
 
-        {/* LEFT: CHAT */}
         <div className="panel panel-chat">
           <div className="chat-messages">
             {history.map((msg, i) => (
@@ -291,7 +329,6 @@ export default function InterviewPage() {
           </div>
         </div>
 
-        {/* RIGHT: CODE EDITOR */}
         <div className="panel panel-editor">
           <CodeEditor
             backendUrl={backendUrl}
