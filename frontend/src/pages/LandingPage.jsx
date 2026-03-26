@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 import { useInterview } from "../store/interviewStore";
+import ResumePreview from "../components/ResumePreview";
 import "../styles/LandingPage.css";
 
 // ✅ Preset roles for quick selection
@@ -20,15 +22,56 @@ export default function LandingPage() {
     setInterviewType,
     jobRole,
     setJobRole,
+    backendUrl,
     lmStudioUrl,
     setLmStudioUrl,
     reset,
   } = useInterview();
 
+  // --- UI STATES ---
   const [starting, setStarting] = useState(false);
+  const [file, setFile] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [extractedText, setExtractedText] = useState("");
+  const [showPreview, setShowPreview] = useState(false);
 
   const handleTypeChange = (type) => {
     setInterviewType(type);
+  };
+
+  // --- RESUME UPLOAD LOGIC (RAG) ---
+  const handleFileUpload = async (e) => {
+    const selectedFile = e.target.files[0];
+    if (!selectedFile) return;
+
+    // Reset previous data if a new file is picked
+    setExtractedText("");
+    setFile(selectedFile);
+    setIsUploading(true);
+
+    const formData = new FormData();
+    formData.append("file", selectedFile);
+
+    try {
+      // Hits the /upload-resume endpoint we defined in main.py
+      const res = await axios.post(`${backendUrl}/upload-resume`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      if (res.data.status === "success") {
+        setExtractedText(res.data.extracted_text);
+        setShowPreview(true); // Open the modal to show extracted content
+      }
+    } catch (err) {
+      console.error("Upload Error:", err);
+      alert(
+        err.response?.data?.detail ||
+          "Failed to analyze resume. Please try again.",
+      );
+      setFile(null);
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const handleStart = () => {
@@ -36,10 +79,15 @@ export default function LandingPage() {
       alert("Please enter or select the Job Role you are applying for.");
       return;
     }
+
+    // Reset store state for a fresh session
     reset();
     setStarting(true);
-    // Small delay for the ripple/loading effect
-    setTimeout(() => navigate("/interview"), 600);
+
+    // Visual delay to allow orbs/animations to transition
+    setTimeout(() => {
+      navigate("/interview");
+    }, 800);
   };
 
   return (
@@ -71,6 +119,44 @@ export default function LandingPage() {
         </p>
 
         <div className="setup-card">
+          {/* ✅ RESUME UPLOAD SECTION (RAG) */}
+          <div className="form-group">
+            <label className="form-label">
+              Personalize with Resume{" "}
+              <span className="optional">(Recommended)</span>
+            </label>
+            <div
+              className={`upload-zone ${file ? "file-selected" : ""} ${isUploading ? "uploading" : ""}`}
+            >
+              <input
+                type="file"
+                id="resume-input"
+                hidden
+                accept=".pdf,.docx,.txt"
+                onChange={handleFileUpload}
+                disabled={isUploading}
+              />
+              <label htmlFor="resume-input" className="upload-label">
+                {isUploading ? (
+                  <span className="upload-loading-text">
+                    <span className="spinner-sm" /> Processing RAG Knowledge...
+                  </span>
+                ) : file ? (
+                  <span className="file-name-display">
+                    📄 {file.name} (Stored in Vector DB)
+                  </span>
+                ) : (
+                  "📤 Click to upload Resume for Personalized Q&A"
+                )}
+              </label>
+            </div>
+            {extractedText && (
+              <p className="input-hint success">
+                ✓ Knowledge base updated with your experience.
+              </p>
+            )}
+          </div>
+
           {/* 1. Interview Type Selection */}
           <div className="form-group">
             <label className="form-label">Select Interview Path</label>
@@ -98,14 +184,14 @@ export default function LandingPage() {
             </div>
           </div>
 
-          {/* 2. Job Role Selection (Multiple Options + Custom) */}
+          {/* 2. Job Role Selection */}
           <div className="form-group">
             <label className="form-label">Target Job Role</label>
-
             <div className="role-suggestions">
               {PRESET_ROLES.map((role) => (
                 <button
                   key={role}
+                  type="button"
                   className={`role-chip ${jobRole === role ? "active" : ""}`}
                   onClick={() => setJobRole(role)}
                 >
@@ -123,7 +209,7 @@ export default function LandingPage() {
             />
           </div>
 
-          {/* 3. LM Studio URL (Optional - Only for Technical) */}
+          {/* 3. LM Studio URL (Technical Only) */}
           {interviewType === "technical" && (
             <div className="form-group animate-fade-in">
               <label className="form-label">
@@ -137,7 +223,7 @@ export default function LandingPage() {
                 placeholder="http://localhost:1234"
               />
               <p className="input-hint">
-                Enable local Phi-3 for live code critiques.
+                Enable local Phi-3 or Llama for real-time code critiques.
               </p>
             </div>
           )}
@@ -145,7 +231,7 @@ export default function LandingPage() {
           <button
             className={`btn-primary ${starting ? "loading" : ""}`}
             onClick={handleStart}
-            disabled={starting}
+            disabled={starting || isUploading}
           >
             {starting ? (
               <>
@@ -157,6 +243,19 @@ export default function LandingPage() {
           </button>
         </div>
       </main>
+
+      {/* ✅ RESUME PREVIEW MODAL */}
+      {showPreview && (
+        <ResumePreview
+          text={extractedText}
+          onConfirm={() => setShowPreview(false)}
+          onCancel={() => {
+            setShowPreview(false);
+            setFile(null);
+            setExtractedText("");
+          }}
+        />
+      )}
 
       <footer className="landing-footer">
         <p>No login required. Your data remains private during the session.</p>
