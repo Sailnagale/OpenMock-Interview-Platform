@@ -47,6 +47,7 @@ export default function InterviewPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [history, streamingText]);
 
+  // ================= INITIALIZATION =================
   useEffect(() => {
     if (effectRan.current || initialized) return;
     setInitialized(true);
@@ -54,27 +55,40 @@ export default function InterviewPage() {
 
     const startInterview = async () => {
       const displayRole = jobRole || "Software Engineer";
-      if (!isTechnical) {
-        try {
-          const res = await axios.post(`${backendUrl}/start-or-followup`, {
-            user_input: "",
-            history: [],
-            interview_type: interviewType,
-            job_role: displayRole,
-            current_question_id: currentQuestionId,
-          });
-          if (res.data?.content) addMessage("assistant", res.data.content);
-        } catch {
-          addMessage("assistant", "⚠️ Backend connection failed.");
+
+      try {
+        console.log(
+          "🚀 Starting interview for role:",
+          displayRole,
+          "Type:",
+          interviewType,
+        );
+        // Unified Backend Call for all interview types
+        const res = await axios.post(`${backendUrl}/start-or-followup`, {
+          user_input: "", // Triggers initial AI greeting
+          history: [],
+          interview_type: interviewType,
+          job_role: displayRole,
+          current_question_id: currentQuestionId,
+        });
+
+        if (res.data?.content) {
+          addMessage("assistant", res.data.content);
         }
-      } else {
-        setPhase("intro");
+
+        // If technical, move to quiz phase so Code Editor/Tracker appear
+        if (isTechnical) {
+          setPhase("quiz");
+        }
+      } catch (err) {
+        console.error("Initialization Error:", err);
         addMessage(
           "assistant",
-          `👋 Welcome to your Technical Interview for the **${displayRole}** position. Let's begin!`,
+          "⚠️ Backend connection failed. Please check if your server is running.",
         );
       }
     };
+
     startInterview();
   }, []);
 
@@ -86,6 +100,7 @@ export default function InterviewPage() {
     }
   };
 
+  // ================= TEXT LOGIC =================
   const sendMessage = async () => {
     const text = userInput.trim();
     if (!text || isSending) return;
@@ -122,6 +137,7 @@ export default function InterviewPage() {
     }
   };
 
+  // ================= VOICE LOGIC =================
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -190,6 +206,7 @@ export default function InterviewPage() {
     }
   };
 
+  // ================= UTILS =================
   const goToQuestion = (idx) => {
     setCurrentQuestionIdx(idx);
     addMessage("assistant", `📝 Question ${idx + 1}: ${questions[idx]}`);
@@ -266,7 +283,7 @@ export default function InterviewPage() {
               <button
                 className="btn-send"
                 onClick={sendMessage}
-                disabled={isSending}
+                disabled={isSending || !userInput.trim()}
               >
                 Send
               </button>

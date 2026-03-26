@@ -1,138 +1,166 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useInterview } from '../store/interviewStore';
-import '../styles/LandingPage.css';
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useInterview } from "../store/interviewStore";
+import "../styles/LandingPage.css";
 
-const HR_QUESTIONS = [
-    { id: 'hr_1', label: 'Q1 – Team Conflict' },
-    { id: 'hr_2', label: 'Q2 – Role Motivation' },
-];
-const TECH_QUESTIONS = [
-    { id: 'cb_1', label: 'Q1 – Sum 1 to N' },
-    { id: 'cb_2', label: 'Q2 – Largest Element' },
-    { id: 'll_1', label: 'Q3 – FizzBuzz' },
+// ✅ Preset roles for quick selection
+const PRESET_ROLES = [
+  "Frontend Developer",
+  "Backend Engineer",
+  "Full Stack Developer",
+  "DevOps Engineer",
+  "Data Scientist",
+  "HR Manager",
 ];
 
 export default function LandingPage() {
-    const navigate = useNavigate();
-    const {
-        interviewType, setInterviewType,
-        currentQuestionId, setCurrentQuestionId,
-        backendUrl, setBackendUrl,
-        lmStudioUrl, setLmStudioUrl,
-        reset,
-    } = useInterview();
+  const navigate = useNavigate();
+  const {
+    interviewType,
+    setInterviewType,
+    jobRole,
+    setJobRole,
+    lmStudioUrl,
+    setLmStudioUrl,
+    reset,
+  } = useInterview();
 
-    const [starting, setStarting] = useState(false);
+  const [starting, setStarting] = useState(false);
 
-    const questions = interviewType === 'hr' ? HR_QUESTIONS : TECH_QUESTIONS;
+  const handleTypeChange = (type) => {
+    setInterviewType(type);
+  };
 
-    const handleTypeChange = (type) => {
-        setInterviewType(type);
-        setCurrentQuestionId(type === 'hr' ? 'hr_1' : 'cb_1');
-    };
+  const handleStart = () => {
+    if (!jobRole.trim()) {
+      alert("Please enter or select the Job Role you are applying for.");
+      return;
+    }
+    reset();
+    setStarting(true);
+    // Small delay for the ripple/loading effect
+    setTimeout(() => navigate("/interview"), 600);
+  };
 
-    const handleStart = () => {
-        reset();
-        setStarting(true);
-        setTimeout(() => navigate('/interview'), 400);
-    };
+  return (
+    <div className="landing">
+      {/* Animated Background Orbs */}
+      <div className="orb orb-1" />
+      <div className="orb orb-2" />
+      <div className="orb orb-3" />
 
-    return (
-        <div className="landing">
-            <div className="orb orb-1" />
-            <div className="orb orb-2" />
-            <div className="orb orb-3" />
-
-            <nav className="navbar">
-                <div className="logo">
-                    <span className="logo-icon">⚡</span> OpenMock
-                </div>
-                <span className="badge">AI‑Powered</span>
-            </nav>
-
-            <main className="hero">
-                <span className="hero-chip">🚀 Groq · Gemini · LM Studio</span>
-                <h1 className="hero-title">
-                    Ace Your Next<br />
-                    <span className="gradient-text">Interview</span>
-                </h1>
-                <p className="hero-sub">
-                    Real‑time AI interviewer that adapts to your answers, analyses your code live,
-                    and delivers a final performance report.
-                </p>
-
-                <div className="setup-card">
-                    {/* Interview Type */}
-                    <div className="form-group">
-                        <label className="form-label">Interview Type</label>
-                        <div className="toggle-group">
-                            <button
-                                className={`toggle-btn ${interviewType === 'hr' ? 'active' : ''}`}
-                                onClick={() => handleTypeChange('hr')}
-                            >
-                                👤 HR Round
-                            </button>
-                            <button
-                                className={`toggle-btn ${interviewType === 'technical' ? 'active' : ''}`}
-                                onClick={() => handleTypeChange('technical')}
-                            >
-                                💻 Technical Round
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* Question Picker */}
-                    <div className="form-group">
-                        <label className="form-label">Starting Question</label>
-                        <select
-                            className="select-input"
-                            value={currentQuestionId}
-                            onChange={e => setCurrentQuestionId(e.target.value)}
-                        >
-                            {questions.map(q => (
-                                <option key={q.id} value={q.id}>{q.label}</option>
-                            ))}
-                        </select>
-                    </div>
-
-                    {/* LM Studio URL (technical only) */}
-                    {interviewType === 'technical' && (
-                        <div className="form-group">
-                            <label className="form-label">
-                                LM Studio URL <span className="optional">(for code analysis)</span>
-                            </label>
-                            <input
-                                className="text-input"
-                                type="text"
-                                value={lmStudioUrl}
-                                onChange={e => setLmStudioUrl(e.target.value)}
-                                placeholder="http://localhost:1234"
-                            />
-                        </div>
-                    )}
-
-                    {/* Backend URL */}
-                    <div className="form-group">
-                        <label className="form-label">Backend URL</label>
-                        <input
-                            className="text-input"
-                            type="text"
-                            value={backendUrl}
-                            onChange={e => setBackendUrl(e.target.value)}
-                            placeholder="http://localhost:8000"
-                        />
-                    </div>
-
-                    <button
-                        className={`btn-primary ${starting ? 'loading' : ''}`}
-                        onClick={handleStart}
-                        disabled={starting}
-                    >
-                        {starting ? <span className="spinner-sm" /> : 'Start Interview →'}
-                    </button>
-                </div>
-            </main>
+      <nav className="navbar">
+        <div className="logo">
+          <span className="logo-icon">⚡</span> OpenMock
         </div>
-    );
+        <div className="nav-right">
+          <span className="badge">v2.0 Beta</span>
+          <span className="hero-chip">Powered by Groq & Gemini</span>
+        </div>
+      </nav>
+
+      <main className="hero">
+        <h1 className="hero-title">
+          Ace Your Next
+          <br />
+          <span className="gradient-text">Interview</span>
+        </h1>
+        <p className="hero-sub">
+          The most realistic AI-driven interview simulator. Select your round,
+          describe your role, and get real-time feedback on your performance.
+        </p>
+
+        <div className="setup-card">
+          {/* 1. Interview Type Selection */}
+          <div className="form-group">
+            <label className="form-label">Select Interview Path</label>
+            <div className="toggle-group">
+              <button
+                className={`toggle-btn ${interviewType === "hr" ? "active" : ""}`}
+                onClick={() => handleTypeChange("hr")}
+              >
+                <span className="icon">👤</span>
+                <div className="btn-txt">
+                  <strong>HR Round</strong>
+                  <span>Behavioral & Cultural</span>
+                </div>
+              </button>
+              <button
+                className={`toggle-btn ${interviewType === "technical" ? "active" : ""}`}
+                onClick={() => handleTypeChange("technical")}
+              >
+                <span className="icon">💻</span>
+                <div className="btn-txt">
+                  <strong>Technical</strong>
+                  <span>Coding & Architecture</span>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          {/* 2. Job Role Selection (Multiple Options + Custom) */}
+          <div className="form-group">
+            <label className="form-label">Target Job Role</label>
+
+            <div className="role-suggestions">
+              {PRESET_ROLES.map((role) => (
+                <button
+                  key={role}
+                  className={`role-chip ${jobRole === role ? "active" : ""}`}
+                  onClick={() => setJobRole(role)}
+                >
+                  {role}
+                </button>
+              ))}
+            </div>
+
+            <input
+              className="text-input"
+              type="text"
+              value={jobRole}
+              onChange={(e) => setJobRole(e.target.value)}
+              placeholder="Or type a custom role..."
+            />
+          </div>
+
+          {/* 3. LM Studio URL (Optional - Only for Technical) */}
+          {interviewType === "technical" && (
+            <div className="form-group animate-fade-in">
+              <label className="form-label">
+                Local AI Analysis <span className="optional">(LM Studio)</span>
+              </label>
+              <input
+                className="text-input"
+                type="text"
+                value={lmStudioUrl}
+                onChange={(e) => setLmStudioUrl(e.target.value)}
+                placeholder="http://localhost:1234"
+              />
+              <p className="input-hint">
+                Enable local Phi-3 for live code critiques.
+              </p>
+            </div>
+          )}
+
+          <button
+            className={`btn-primary ${starting ? "loading" : ""}`}
+            onClick={handleStart}
+            disabled={starting}
+          >
+            {starting ? (
+              <>
+                <span className="spinner-sm" /> Initializing AI...
+              </>
+            ) : (
+              "Start Interview →"
+            )}
+          </button>
+        </div>
+      </main>
+
+      <footer className="landing-footer">
+        <p>No login required. Your data remains private during the session.</p>
+      </footer>
+    </div>
+  );
 }

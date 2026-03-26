@@ -8,6 +8,7 @@ class Message(BaseModel):
 class InterviewState(BaseModel):
     user_input: Optional[str] = ""   # ✅ make optional
     history: List[Message]
+    job_role: Optional[str] 
     interview_type: str
     current_question_id: Optional[str] = None
 
