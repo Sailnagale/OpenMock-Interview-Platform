@@ -21,10 +21,9 @@
     overflow: hidden;
 }
 
-/* Container for the panels below the Nav */
 .panels-container {
     display: grid;
-    grid-template-columns: 1fr 1fr; /* Chat Left, Editor Right */
+    grid-template-columns: 1fr 1fr;
     gap: 16px;
     flex: 1;
     padding: 16px;
@@ -32,7 +31,6 @@
     overflow: hidden;
 }
 
-/* Quiz mode: 3-panel layout */
 .interview-layout.quiz-mode .panels-container {
     grid-template-columns: 200px 1fr 1fr;
 }
@@ -103,6 +101,30 @@
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--radius-md);
+    position: relative; /* For NLP Indicator */
+}
+
+/* 🔥 NEW: NLP LIVE INDICATOR */
+.nlp-indicator {
+    position: absolute;
+    top: 10px;
+    right: 16px;
+    z-index: 5;
+    background: rgba(15, 23, 42, 0.8);
+    backdrop-filter: blur(4px);
+    border: 1px solid var(--accent);
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    color: var(--accent);
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    animation: slideInDown 0.3s ease-out;
+}
+
+@keyframes slideInDown {
+    from { transform: translateY(-10px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
 }
 
 .chat-messages {
@@ -113,7 +135,7 @@
     flex-direction: column;
     gap: 14px;
     scroll-behavior: smooth;
-    min-height: 0; /* Important for grid scrolling */
+    min-height: 0;
 }
 
 /* Custom Scrollbar for Chat */
@@ -287,30 +309,7 @@
     40% { transform: translateY(-6px); }
 }
 
-/* ================= UTILS ================= */
-.voice-status {
-    font-size: 12px;
-    color: var(--accent);
-    font-weight: 500;
-    margin-left: 8px;
-    animation: fade-in 0.3s ease;
-}
-
-@keyframes fade-in {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
-
-/* Hide double welcome message caused by React StrictMode init */
-.chat-messages > div:nth-child(2) {
-    display: none !important;
-}
-
-/* Ensure the Code Editor panel fills its height correctly */
-.panel-editor {
-    height: 100%;
-}
-
+/* ================= TIMER & MODALS ================= */
 .timer-display {
     font-family: 'Courier New', Courier, monospace;
     font-size: 1.1rem;
@@ -332,4 +331,65 @@
     0% { opacity: 1; }
     50% { opacity: 0.6; }
     100% { opacity: 1; }
+}
+
+/* 🔥 NEW: RESUME PREVIEW MODAL STYLES */
+.modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.85);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+}
+
+.modal-content {
+    background: var(--surface);
+    padding: 2rem;
+    border-radius: var(--radius-md);
+    width: 90%;
+    max-width: 600px;
+    border: 1px solid var(--border);
+    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+}
+
+.resume-scroll-area {
+    background: var(--bg);
+    padding: 1.2rem;
+    height: 350px;
+    overflow-y: auto;
+    border-radius: 8px;
+    margin: 1.5rem 0;
+    font-family: 'Fira Code', monospace;
+    font-size: 0.85rem;
+    color: #cbd5e1;
+    white-space: pre-wrap;
+    text-align: left;
+    border: 1px solid var(--border);
+}
+
+.modal-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+}
+
+/* ================= UTILS ================= */
+.voice-status {
+    font-size: 12px;
+    color: var(--accent);
+    font-weight: 500;
+    margin-left: 8px;
+}
+
+.chat-messages > div:nth-child(2) {
+    display: none !important;
+}
+
+.panel-editor {
+    height: 100%;
 }

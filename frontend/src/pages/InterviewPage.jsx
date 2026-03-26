@@ -33,16 +33,21 @@ export default function InterviewPage() {
   const [streamingText, setStreamingText] = useState("");
   const [initialized, setInitialized] = useState(false);
 
-  const [timeLeft, setTimeLeft] = useState(1800);
+  // --- TIMER STATES ---
+  const [timeLeft, setTimeLeft] = useState(1800); // 30 mins
   const timerRef = useRef(null);
 
   const messagesEndRef = useRef(null);
   const effectRan = useRef(false);
   const isTechnical = interviewType === "technical";
 
+  // --- VOICE STATES ---
   const [isRecording, setIsRecording] = useState(false);
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
+
+  // --- NLP & RAG STATES (NEW) ---
+  const [lastAnalysis, setLastAnalysis] = useState(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -73,7 +78,7 @@ export default function InterviewPage() {
     return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
-  // ================= INITIALIZATION =================
+  // ================= INITIALIZATION (RAG AWARE) =================
   useEffect(() => {
     if (effectRan.current || initialized) return;
     setInitialized(true);
@@ -82,13 +87,17 @@ export default function InterviewPage() {
     const startInterview = async () => {
       const displayRole = jobRole || "Software Engineer";
       try {
-        const res = await axios.post(`${backendUrl}/start-or-followup`, {
-          user_input: "",
-          history: [],
-          interview_type: interviewType,
-          job_role: displayRole,
-          current_question_id: currentQuestionId,
-        });
+        // Updated to use the unified API that now pulls from RAG modules
+        const res = await axios.post(
+          `${backendUrl}/api/interview/start-or-followup`,
+          {
+            user_input: "",
+            history: [],
+            interview_type: interviewType,
+            job_role: displayRole,
+            current_question_id: currentQuestionId,
+          },
+        );
 
         if (res.data?.content) {
           addMessage("assistant", res.data.content);
@@ -98,7 +107,10 @@ export default function InterviewPage() {
           setPhase("quiz");
         }
       } catch (err) {
-        addMessage("assistant", "⚠️ Backend connection failed.");
+        addMessage(
+          "assistant",
+          "⚠️ Backend connection failed. Ensure server is on port 8000.",
+        );
       }
     };
     startInterview();
@@ -106,12 +118,15 @@ export default function InterviewPage() {
 
   const handleEndInterview = () => {
     if (
-      window.confirm("Ready to wrap up? This will generate your final report.")
+      window.confirm(
+        "Ready to wrap up? This will generate your final report with NLP analysis.",
+      )
     ) {
       navigate("/report");
     }
   };
 
+  // ================= TEXT LOGIC (NLP & RAG AWARE) =================
   const sendMessage = async () => {
     const text = userInput.trim();
     if (!text || isSending) return;
@@ -119,8 +134,9 @@ export default function InterviewPage() {
     setUserInput("");
     setIsSending(true);
     setStreamingText("");
+
     try {
-      const res = await fetch(`${backendUrl}/start-or-followup`, {
+      const res = await fetch(`${backendUrl}/api/interview/start-or-followup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -130,15 +146,20 @@ export default function InterviewPage() {
           job_role: jobRole,
         }),
       });
+
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let full = "";
+
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-        full += decoder.decode(value);
+
+        const chunk = decoder.decode(value);
+        full += chunk;
         setStreamingText(full);
       }
+
       addMessage("assistant", full);
       setStreamingText("");
     } catch {
@@ -148,7 +169,7 @@ export default function InterviewPage() {
     }
   };
 
-  // ================= VOICE LOGIC (FIXED) =================
+  // ================= VOICE LOGIC (NLP & RAG AWARE) =================
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -161,7 +182,6 @@ export default function InterviewPage() {
       };
 
       recorder.onstop = () => {
-        // Stop all hardware tracks (turns off the microphone light)
         stream.getTracks().forEach((track) => track.stop());
         handleVoiceSend();
       };
@@ -193,7 +213,7 @@ export default function InterviewPage() {
         fr.onloadend = () => resolve(fr.result.split(",")[1]);
       });
 
-      const res = await fetch(`${backendUrl}/voice-interview`, {
+      const res = await fetch(`${backendUrl}/api/voice/voice-interview`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -224,6 +244,8 @@ export default function InterviewPage() {
           if (data.text) {
             fullText += data.text;
             setStreamingText(fullText);
+
+            // Handle real-time audio playback from AI
             if (data.audio) {
               const audio = new Audio("data:audio/mp3;base64," + data.audio);
               await new Promise((res) => {
@@ -231,6 +253,11 @@ export default function InterviewPage() {
                 audio.play();
               });
             }
+          }
+
+          // Capture hidden NLP analysis for the dashboard if sent
+          if (data.analysis) {
+            setLastAnalysis(data.analysis);
           }
         }
       }
@@ -240,7 +267,7 @@ export default function InterviewPage() {
       addMessage("assistant", "⚠️ Voice processing failed.");
     } finally {
       setIsSending(false);
-      setIsRecording(false); // Explicitly reset UI
+      setIsRecording(false);
       setStreamingText("");
     }
   };
@@ -263,8 +290,9 @@ export default function InterviewPage() {
   return (
     <div className={`interview-layout ${isQuizMode ? "quiz-mode" : ""}`}>
       <header className="interview-top-bar">
-        <div className="logo-section">⚡ OpenMock</div>
+        <div className="logo-section">⚡ OpenMock AI</div>
         <div className="session-info">
+          {/* Timer with Warning state */}
           <div className={`timer-display ${timeLeft < 300 ? "urgent" : ""}`}>
             {formatTime(timeLeft)}
           </div>
@@ -286,6 +314,13 @@ export default function InterviewPage() {
         )}
 
         <div className="panel panel-chat">
+          {/* Added a subtle NLP status indicator if analysis is active */}
+          {lastAnalysis && (
+            <div className="nlp-indicator">
+              <span>Confidence: {lastAnalysis.tone || "Analyzing..."}</span>
+            </div>
+          )}
+
           <div className="chat-messages">
             {history.map((msg, i) => (
               <ChatMessage key={i} role={msg.role} content={msg.content} />
@@ -299,7 +334,7 @@ export default function InterviewPage() {
           <div className="chat-input-area">
             <textarea
               className="chat-textarea"
-              placeholder="Type your answer..."
+              placeholder={isRecording ? "Listening..." : "Type your answer..."}
               value={userInput}
               onChange={(e) => setUserInput(e.target.value)}
               onKeyDown={(e) =>
