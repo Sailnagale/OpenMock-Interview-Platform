@@ -283,7 +283,7 @@ export default function InterviewPage() {
 
         const chunk = decoder.decode(value);
         full += chunk;
-        setStreamingText(full);
+        setStreamingText(full.replace(/\[METADATA:\s*\{[\s\S]*?\}\s*\]/g, "").trim());
       }
 
       let assistantMessage = full;
@@ -293,7 +293,7 @@ export default function InterviewPage() {
       if (metadataMatch) {
         try {
           meta = JSON.parse(metadataMatch[1]);
-          assistantMessage = full.replace(/\[METADATA:\s*\{[\s\S]*?\}\]/, "").trim();
+          assistantMessage = full.replace(/\[METADATA:\s*\{[\s\S]*?\}\s*\]/g, "").trim();
         } catch (e) {
           console.error("Failed to parse stream metadata:", e);
         }
@@ -432,6 +432,14 @@ export default function InterviewPage() {
           history,
           interview_type: interviewType,
           job_role: jobRole,
+          user_email: user?.email || "",
+          technical_phase: technicalPhase,
+          technical_intro_stage: isTechnical && technicalPhase === "intro" ? technicalIntroStage : undefined,
+          current_question_idx: currentQuestionIdx,
+          current_question_text: questions[currentQuestionIdx] || "",
+          submitted_code: submittedCode,
+          current_score: currentScore,
+          follow_ups: followUps
         }),
       });
 
@@ -456,7 +464,7 @@ export default function InterviewPage() {
 
             if (data.text) {
               fullText += data.text;
-              setStreamingText(fullText);
+              setStreamingText(fullText.replace(/\[METADATA:\s*\{[\s\S]*?\}\s*\]/g, "").trim());
 
               if (data.audio) {
                 const audio = new Audio("data:audio/mp3;base64," + data.audio);
@@ -478,7 +486,90 @@ export default function InterviewPage() {
           }
         }
       }
-      addMessage("assistant", fullText);
+
+      let assistantMessage = fullText;
+      let meta = null;
+
+      const metadataMatch = fullText.match(/\[METADATA:\s*(\{[\s\S]*?\})\]/);
+      if (metadataMatch) {
+        try {
+          meta = JSON.parse(metadataMatch[1]);
+          assistantMessage = fullText.replace(/\[METADATA:\s*\{[\s\S]*?\}\s*\]/g, "").trim();
+        } catch (e) {
+          console.error("Failed to parse stream metadata:", e);
+        }
+      }
+
+      addMessage("assistant", assistantMessage);
+
+      if (isTechnical && technicalPhase === "intro") {
+        setTechnicalIntroStage((prev) => prev + 1);
+      }
+
+      if (meta) {
+        if (meta.score_adjustment !== undefined) {
+          const currentResult = questionResults[currentQuestionIdx];
+          if (currentResult) {
+            const adjustedScore = Math.max(0, Math.min(100, currentResult.score + meta.score_adjustment));
+            addQuestionResult(currentQuestionIdx, {
+              ...currentResult,
+              score: adjustedScore
+            });
+          }
+        }
+
+        if (meta.next_phase) {
+          setTechnicalPhase(meta.next_phase);
+        }
+
+        if (meta.transition_to_coding) {
+          setTechnicalPhase("coding");
+          setPhase("quiz");
+          
+          const currentQ1 = questions[0];
+          if (currentQ1 && currentQ1 !== "Pending...") {
+            const welcomeCodingMsg = `### Coding Challenge 1 (EASY)\n\n${currentQ1}`;
+            addMessage("assistant", welcomeCodingMsg);
+            
+            const shortQTitle = currentQ1.split("\n")[0] || "Coding Challenge 1";
+            speakText(`I have generated Coding Challenge 1: ${shortQTitle}. Please review the description and write your solution in the editor panel on the right.`);
+          } else {
+            setQuestions(["Pending...", "Pending...", "Pending..."]);
+            setCurrentQuestionIdx(0);
+            setIsSending(true);
+            setTimeout(async () => {
+              const displayRole = jobRole || "Software Engineer";
+              try {
+                const qRes = await axios.post(`${backendUrl}/api/technical/generate-questions`, {
+                  job_role: displayRole,
+                  count: 1,
+                  difficulty: "easy"
+                });
+                const q1 = qRes.data.questions[0] || "Given an array of integers, return indices of the two numbers such that they add up to a specific target.";
+                
+                setQuestions([q1, "Pending...", "Pending..."]);
+                setCurrentQuestionIdx(0);
+
+                const welcomeCodingMsg = `### Coding Challenge 1 (EASY)\n\n${q1}`;
+                addMessage("assistant", welcomeCodingMsg);
+                
+                const shortQTitle = q1.split("\n")[0] || "Coding Challenge 1";
+                speakText(`I have generated Coding Challenge 1: ${shortQTitle}. Please review the description and write your solution in the editor panel on the right.`);
+              } catch (err) {
+                console.error("Coding transition question generation error:", err);
+                const fallbackQ = "Given an array of integers, return indices of the two numbers such that they add up to a specific target.";
+                setQuestions([fallbackQ, "Pending...", "Pending..."]);
+                setCurrentQuestionIdx(0);
+                const welcomeCodingMsg = `### Coding Challenge 1 (EASY)\n\n${fallbackQ}`;
+                addMessage("assistant", welcomeCodingMsg);
+                speakText("I had trouble generating the challenge online, so I've loaded a fallback coding question. Please review the details in the editor panel.");
+              } finally {
+                setIsSending(false);
+              }
+            }, 100);
+          }
+        }
+      }
     } catch (err) {
       console.error("Voice Error:", err);
       addMessage("assistant", "⚠️ Voice processing failed.");

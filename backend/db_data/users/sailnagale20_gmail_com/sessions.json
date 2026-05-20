@@ -352,5 +352,281 @@
     "critiques": [],
     "results": [],
     "report": "Candidate showed strong technical grasp but lacked structural depth in behavioral answers."
+  },
+  {
+    "id": "sess_1779282431",
+    "timestamp": 1779282431.6626763,
+    "session_type": "technical",
+    "history": [
+      {
+        "role": "assistant",
+        "content": "Hello Sail, welcome to the interview for the Data Scientist position at JPMorgan Chase & Co. I'll be discussing some conceptual topics with you, starting with: What role do you think machine learning plays in risk modeling and fraud detection in the financial services industry?"
+      },
+      {
+        "role": "user",
+        "content": "So in banking system we can use the machine learning for detecting whether the person is going to repay the loan or not. We can develop the fraud detection mechanism and also with the help of machine learning we can ensure the person who are going to default are correctly detected."
+      },
+      {
+        "role": "assistant",
+        "content": "That's a good start, Sail. Machine learning can indeed be used to predict loan defaults and detect fraudulent activities. Now, let's move on to the coding challenge. Please take a look at the editor on the right, where you'll find a problem to solve. Write and submit your code there, and we'll review it as part of the interview process. Begin with the first coding question in the editor."
+      },
+      {
+        "role": "assistant",
+        "content": "### Code Submitted Successfully!\n\n**Verdict:** PASS\n**Score:** 90/100\n\n**Critique:**\n**Local LLM (Phi-3) Evaluation:**\nThe solution correctly calculates the percentage of missing values in the list. It is well-structured, readable, and follows good naming conventions. However, it does not handle the case where the input list is empty, which would result in a ZeroDivisionError. Additionally, the use of the math library for checking NaN could be replaced with a more Pythonic approach using the built-in isinstance and isnan functions from the math library are not necessary, the isnan function from the math library could be replaced with the built-in isnan function from the numpy library or a simple comparison with float('nan')\n\n**Follow-up Question 1:** How would you optimize this function for large datasets, considering the current time complexity of O(n)?"
+      },
+      {
+        "role": "user",
+        "content": "Use Generator Expression (Memory Efficient)\n\nInstead of a manual loop:"
+      },
+      {
+        "role": "assistant",
+        "content": "**Evaluation:** The candidate's answer is mostly correct, as using a generator expression can improve memory efficiency, but they failed to provide a concrete example or explanation of how it would optimize the function for large datasets, which would have made their answer flawless.\n\n**Follow-up Question 2:** What would be the most efficient way to handle the case where the input list is empty, and how would you modify the function to return a specific value or raise an exception in this case?"
+      },
+      {
+        "role": "user",
+        "content": "So I will return a specific value. A practical approach is returning 0.0."
+      },
+      {
+        "role": "assistant",
+        "content": "Returning 0.0 is a reasonable approach when the input list is empty, as it implies that there are no missing values. This approach is simple and consistent with the function's purpose. Now, please proceed to the next coding question in the editor on the right, where you'll find a new problem to solve. Write and submit your code there"
+      },
+      {
+        "role": "assistant",
+        "content": "\ud83d\udcdd Question 1: Find Missing Values Percentage\nGiven a dataset column as a list, write a function to calculate the percentage of missing values (None or NaN) in the list.\n\nExample:\nInput: [1, 2, None, 4, float('nan')]\nOutput: 40.0"
+      },
+      {
+        "role": "assistant",
+        "content": "\ud83d\udcdd Question 1: Find Missing Values Percentage\nGiven a dataset column as a list, write a function to calculate the percentage of missing values (None or NaN) in the list.\n\nExample:\nInput: [1, 2, None, 4, float('nan')]\nOutput: 40.0"
+      },
+      {
+        "role": "assistant",
+        "content": "\ud83d\udcdd Question 1: Find Missing Values Percentage\nGiven a dataset column as a list, write a function to calculate the percentage of missing values (None or NaN) in the list.\n\nExample:\nInput: [1, 2, None, 4, float('nan')]\nOutput: 40.0"
+      }
+    ],
+    "critiques": [],
+    "results": [
+      {
+        "verdict": "PASS",
+        "score": 98,
+        "feedback": "**Local LLM (Phi-3) Evaluation:**\nThe solution correctly calculates the percentage of missing values in the list. It is well-structured, readable, and follows good naming conventions. However, it does not handle the case where the input list is empty, which would result in a ZeroDivisionError. Additionally, the use of the math library for checking NaN could be replaced with a more Pythonic approach using the built-in isinstance and isnan functions from the math library are not necessary, the isnan function from the math library could be replaced with the built-in isnan function from the numpy library or a simple comparison with float('nan')",
+        "difficulty": "easy"
+      }
+    ],
+    "report": "Candidate showed strong technical grasp but lacked structural depth in behavioral answers."
+  },
+  {
+    "id": "sess_1779282432",
+    "timestamp": 1779282432.0759394,
+    "session_type": "technical",
+    "history": [
+      {
+        "role": "assistant",
+        "content": "Hello Sail, welcome to the interview for the Data Scientist position at JPMorgan Chase & Co. I'll be discussing some conceptual topics with you, starting with: What role do you think machine learning plays in risk modeling and fraud detection in the financial services industry?"
+      },
+      {
+        "role": "user",
+        "content": "So in banking system we can use the machine learning for detecting whether the person is going to repay the loan or not. We can develop the fraud detection mechanism and also with the help of machine learning we can ensure the person who are going to default are correctly detected."
+      },
+      {
+        "role": "assistant",
+        "content": "That's a good start, Sail. Machine learning can indeed be used to predict loan defaults and detect fraudulent activities. Now, let's move on to the coding challenge. Please take a look at the editor on the right, where you'll find a problem to solve. Write and submit your code there, and we'll review it as part of the interview process. Begin with the first coding question in the editor."
+      },
+      {
+        "role": "assistant",
+        "content": "### Code Submitted Successfully!\n\n**Verdict:** PASS\n**Score:** 90/100\n\n**Critique:**\n**Local LLM (Phi-3) Evaluation:**\nThe solution correctly calculates the percentage of missing values in the list. It is well-structured, readable, and follows good naming conventions. However, it does not handle the case where the input list is empty, which would result in a ZeroDivisionError. Additionally, the use of the math library for checking NaN could be replaced with a more Pythonic approach using the built-in isinstance and isnan functions from the math library are not necessary, the isnan function from the math library could be replaced with the built-in isnan function from the numpy library or a simple comparison with float('nan')\n\n**Follow-up Question 1:** How would you optimize this function for large datasets, considering the current time complexity of O(n)?"
+      },
+      {
+        "role": "user",
+        "content": "Use Generator Expression (Memory Efficient)\n\nInstead of a manual loop:"
+      },
+      {
+        "role": "assistant",
+        "content": "**Evaluation:** The candidate's answer is mostly correct, as using a generator expression can improve memory efficiency, but they failed to provide a concrete example or explanation of how it would optimize the function for large datasets, which would have made their answer flawless.\n\n**Follow-up Question 2:** What would be the most efficient way to handle the case where the input list is empty, and how would you modify the function to return a specific value or raise an exception in this case?"
+      },
+      {
+        "role": "user",
+        "content": "So I will return a specific value. A practical approach is returning 0.0."
+      },
+      {
+        "role": "assistant",
+        "content": "Returning 0.0 is a reasonable approach when the input list is empty, as it implies that there are no missing values. This approach is simple and consistent with the function's purpose. Now, please proceed to the next coding question in the editor on the right, where you'll find a new problem to solve. Write and submit your code there"
+      },
+      {
+        "role": "assistant",
+        "content": "\ud83d\udcdd Question 1: Find Missing Values Percentage\nGiven a dataset column as a list, write a function to calculate the percentage of missing values (None or NaN) in the list.\n\nExample:\nInput: [1, 2, None, 4, float('nan')]\nOutput: 40.0"
+      },
+      {
+        "role": "assistant",
+        "content": "\ud83d\udcdd Question 1: Find Missing Values Percentage\nGiven a dataset column as a list, write a function to calculate the percentage of missing values (None or NaN) in the list.\n\nExample:\nInput: [1, 2, None, 4, float('nan')]\nOutput: 40.0"
+      },
+      {
+        "role": "assistant",
+        "content": "\ud83d\udcdd Question 1: Find Missing Values Percentage\nGiven a dataset column as a list, write a function to calculate the percentage of missing values (None or NaN) in the list.\n\nExample:\nInput: [1, 2, None, 4, float('nan')]\nOutput: 40.0"
+      }
+    ],
+    "critiques": [],
+    "results": [
+      {
+        "verdict": "PASS",
+        "score": 98,
+        "feedback": "**Local LLM (Phi-3) Evaluation:**\nThe solution correctly calculates the percentage of missing values in the list. It is well-structured, readable, and follows good naming conventions. However, it does not handle the case where the input list is empty, which would result in a ZeroDivisionError. Additionally, the use of the math library for checking NaN could be replaced with a more Pythonic approach using the built-in isinstance and isnan functions from the math library are not necessary, the isnan function from the math library could be replaced with the built-in isnan function from the numpy library or a simple comparison with float('nan')",
+        "difficulty": "easy"
+      }
+    ],
+    "report": "Candidate showed strong technical grasp but lacked structural depth in behavioral answers."
+  },
+  {
+    "id": "sess_1779283285",
+    "timestamp": 1779283285.9870682,
+    "session_type": "technical",
+    "history": [
+      {
+        "role": "assistant",
+        "content": "Hello Sail, welcome to the interview, I'm looking forward to discussing your qualifications for the Data Scientist role. To begin, can you tell me about your understanding of the importance of feature engineering in machine learning pipelines, and how you've applied it in your previous projects?"
+      },
+      {
+        "role": "user",
+        "content": "So, feature engineering is a very important concept in the machine learning. So with the feature engineering, we can derive the new features from the existing data. So in our previous project, we have derived the car age based on the manufacturing date in the data set."
+      },
+      {
+        "role": "assistant",
+        "content": "Your previous response demonstrates a basic understanding of feature engineering, but could benefit from more specific examples and technical details. Can you explain the concept of overfitting in machine learning models and how you would approach regularization to prevent it in a model you're developing?"
+      },
+      {
+        "role": "user",
+        "content": "So the overfitting is a concept where the machine learning model learns the dataset very well that when we give the new data, it fails. To avoid the overfitting, we generally introduce the noise in the dataset. Also, we choose the different methods like random forage and clustering for avoiding the overfitting."
+      },
+      {
+        "role": "assistant",
+        "content": "Your response touches on the idea of overfitting, but lacks clarity and accuracy in terms of techniques used to prevent it. How do you think ensemble methods, such as bagging or boosting, can be used to improve the robustness and generalizability of a machine learning model?"
+      },
+      {
+        "role": "user",
+        "content": "So we use the boosting to increase scale up the data set."
+      },
+      {
+        "role": "assistant",
+        "content": "Your response shows some familiarity with ensemble methods, but could be more precise and detailed. We will now transition to the practical coding round, and your first coding problem is loading"
+      },
+      {
+        "role": "assistant",
+        "content": "### Code Submitted Successfully!\n\n**Verdict:** PASS\n**Score:** 95/100\n\n**Critique:**\n**Local LLM (Phi-3) Evaluation:**\nThe code is clean, readable, and correctly calculates the percentage of missing values. It handles edge cases like empty lists and correctly identifies NaN values. The time complexity is O(n) and space complexity is O(1), which is optimal for this problem.\n\n**Follow-up Question 1:** How would you optimize this function if the input list was extremely large and didn't fit into memory, and what trade-offs would you consider?"
+      },
+      {
+        "role": "user",
+        "content": "."
+      },
+      {
+        "role": "assistant",
+        "content": "**Evaluation:** The candidate did not provide a verbal response to the follow-up question, and therefore, their answer cannot be evaluated. A valid response would have included a discussion on optimizing the function for large input lists, such as using generators or chunking the data.\n\n**Follow-up Question 2:** Suppose the input list contains other types of missing values, such as empty strings or specific sentinel values. How would you modify the function to handle these cases, and what considerations would you take into account when deciding which values to consider 'missing'?"
+      },
+      {
+        "role": "user",
+        "content": "."
+      },
+      {
+        "role": "assistant",
+        "content": "**Evaluation:** The candidate did not provide a verbal response to the follow-up question, and therefore, their answer cannot be evaluated. A response is required to assess their ability to handle additional types of missing values and their thought process.\n\nPerfect! I have completed the follow-up evaluation for this question. You can now proceed to the next problem by clicking the **'Next Question'** button above the editor."
+      },
+      {
+        "role": "user",
+        "content": "."
+      },
+      {
+        "role": "assistant",
+        "content": "Please check the editor panel on the right for your next coding question. You will write and submit your code there. I'll be happy to help you with any questions or provide feedback on your submissions. Let's get started with the next problem."
+      },
+      {
+        "role": "assistant",
+        "content": "### Coding Challenge 2 (MEDIUM)\n\nFind the Average of Each Column\nGiven a 2D list representing rows of numerical data, calculate the average of each column.\n\nExample:\nInput:\n[\n [1, 2, 3],\n [4, 5, 6],\n [7, 8, 9]\n]\nOutput:\n[4.0, 5.0, 6.0]"
+      }
+    ],
+    "critiques": [],
+    "results": [
+      {
+        "verdict": "PASS",
+        "score": 95,
+        "feedback": "**Local LLM (Phi-3) Evaluation:**\nThe code is clean, readable, and correctly calculates the percentage of missing values. It handles edge cases like empty lists and correctly identifies NaN values. The time complexity is O(n) and space complexity is O(1), which is optimal for this problem.",
+        "difficulty": "easy"
+      }
+    ],
+    "report": "Candidate showed strong technical grasp but lacked structural depth in behavioral answers."
+  },
+  {
+    "id": "sess_1779283286",
+    "timestamp": 1779283286.4789517,
+    "session_type": "technical",
+    "history": [
+      {
+        "role": "assistant",
+        "content": "Hello Sail, welcome to the interview, I'm looking forward to discussing your qualifications for the Data Scientist role. To begin, can you tell me about your understanding of the importance of feature engineering in machine learning pipelines, and how you've applied it in your previous projects?"
+      },
+      {
+        "role": "user",
+        "content": "So, feature engineering is a very important concept in the machine learning. So with the feature engineering, we can derive the new features from the existing data. So in our previous project, we have derived the car age based on the manufacturing date in the data set."
+      },
+      {
+        "role": "assistant",
+        "content": "Your previous response demonstrates a basic understanding of feature engineering, but could benefit from more specific examples and technical details. Can you explain the concept of overfitting in machine learning models and how you would approach regularization to prevent it in a model you're developing?"
+      },
+      {
+        "role": "user",
+        "content": "So the overfitting is a concept where the machine learning model learns the dataset very well that when we give the new data, it fails. To avoid the overfitting, we generally introduce the noise in the dataset. Also, we choose the different methods like random forage and clustering for avoiding the overfitting."
+      },
+      {
+        "role": "assistant",
+        "content": "Your response touches on the idea of overfitting, but lacks clarity and accuracy in terms of techniques used to prevent it. How do you think ensemble methods, such as bagging or boosting, can be used to improve the robustness and generalizability of a machine learning model?"
+      },
+      {
+        "role": "user",
+        "content": "So we use the boosting to increase scale up the data set."
+      },
+      {
+        "role": "assistant",
+        "content": "Your response shows some familiarity with ensemble methods, but could be more precise and detailed. We will now transition to the practical coding round, and your first coding problem is loading"
+      },
+      {
+        "role": "assistant",
+        "content": "### Code Submitted Successfully!\n\n**Verdict:** PASS\n**Score:** 95/100\n\n**Critique:**\n**Local LLM (Phi-3) Evaluation:**\nThe code is clean, readable, and correctly calculates the percentage of missing values. It handles edge cases like empty lists and correctly identifies NaN values. The time complexity is O(n) and space complexity is O(1), which is optimal for this problem.\n\n**Follow-up Question 1:** How would you optimize this function if the input list was extremely large and didn't fit into memory, and what trade-offs would you consider?"
+      },
+      {
+        "role": "user",
+        "content": "."
+      },
+      {
+        "role": "assistant",
+        "content": "**Evaluation:** The candidate did not provide a verbal response to the follow-up question, and therefore, their answer cannot be evaluated. A valid response would have included a discussion on optimizing the function for large input lists, such as using generators or chunking the data.\n\n**Follow-up Question 2:** Suppose the input list contains other types of missing values, such as empty strings or specific sentinel values. How would you modify the function to handle these cases, and what considerations would you take into account when deciding which values to consider 'missing'?"
+      },
+      {
+        "role": "user",
+        "content": "."
+      },
+      {
+        "role": "assistant",
+        "content": "**Evaluation:** The candidate did not provide a verbal response to the follow-up question, and therefore, their answer cannot be evaluated. A response is required to assess their ability to handle additional types of missing values and their thought process.\n\nPerfect! I have completed the follow-up evaluation for this question. You can now proceed to the next problem by clicking the **'Next Question'** button above the editor."
+      },
+      {
+        "role": "user",
+        "content": "."
+      },
+      {
+        "role": "assistant",
+        "content": "Please check the editor panel on the right for your next coding question. You will write and submit your code there. I'll be happy to help you with any questions or provide feedback on your submissions. Let's get started with the next problem."
+      },
+      {
+        "role": "assistant",
+        "content": "### Coding Challenge 2 (MEDIUM)\n\nFind the Average of Each Column\nGiven a 2D list representing rows of numerical data, calculate the average of each column.\n\nExample:\nInput:\n[\n [1, 2, 3],\n [4, 5, 6],\n [7, 8, 9]\n]\nOutput:\n[4.0, 5.0, 6.0]"
+      }
+    ],
+    "critiques": [],
+    "results": [
+      {
+        "verdict": "PASS",
+        "score": 95,
+        "feedback": "**Local LLM (Phi-3) Evaluation:**\nThe code is clean, readable, and correctly calculates the percentage of missing values. It handles edge cases like empty lists and correctly identifies NaN values. The time complexity is O(n) and space complexity is O(1), which is optimal for this problem.",
+        "difficulty": "easy"
+      }
+    ],
+    "report": "Candidate showed strong technical grasp but lacked structural depth in behavioral answers."
   }
 ]
