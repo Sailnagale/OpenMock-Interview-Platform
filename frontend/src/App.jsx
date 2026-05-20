@@ -1,8 +1,9 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
-import { InterviewProvider } from './store/interviewStore';
-import LandingPage from './pages/LandingPage';
-import InterviewPage from './pages/InterviewPage';
-import ReportPage from './pages/ReportPage';
+// App.jsx
+import { Routes, Route, Navigate } from "react-router-dom";
+import { InterviewProvider } from "./store/interviewStore";
+import LandingPage from "./pages/LandingPage";
+import InterviewPage from "./pages/InterviewPage";
+import ReportPage from "./pages/ReportPage";
 
 export default function App() {
   return (
