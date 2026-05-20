@@ -2,12 +2,12 @@ import chromadb
 from chromadb.utils import embedding_functions
 
 class VectorStore:
-    def __init__(self):
+    def __init__(self, collection_name="interview_data"):
         # Local storage in a folder named 'db_data'
         self.client = chromadb.PersistentClient(path="./db_data")
         self.embed_fn = embedding_functions.DefaultEmbeddingFunction()
         self.collection = self.client.get_or_create_collection(
-            name="interview_data", 
+            name=collection_name, 
             embedding_function=self.embed_fn
         )
 

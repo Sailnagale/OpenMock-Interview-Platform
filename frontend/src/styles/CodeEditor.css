@@ -183,3 +183,65 @@
     background: rgba(0, 0, 0, 0.15);
     flex-shrink: 0;
 }
+
+/* Parsed Question Styles */
+.parsed-question {
+    color: var(--text);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.parsed-question-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text);
+    margin: 0;
+}
+
+.parsed-section {
+    font-size: 13.5px;
+    line-height: 1.55;
+}
+
+.parsed-section h4 {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--accent-2);
+    margin: 8px 0 4px 0;
+}
+
+.example-block {
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-family: var(--mono);
+    font-size: 12.5px;
+    line-height: 1.5;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    color: #e2e8f0;
+    margin: 4px 0;
+}
+
+.constraints-sec ul {
+    margin: 4px 0;
+    padding-left: 20px;
+    list-style-type: disc;
+}
+
+.constraints-sec li {
+    margin-bottom: 3px;
+    color: var(--text-muted);
+}
+
+.question-loading-state {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 0;
+    color: var(--text-muted);
+    font-size: 14px;
+}
