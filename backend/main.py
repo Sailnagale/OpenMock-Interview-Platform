@@ -1,10 +1,11 @@
 import uvicorn
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
+from typing import Optional
 
 # --- Route Imports ---
 # Make sure these files exist in your 'routes' folder
-from routes import interview, technical, report, voice
+from routes import interview, technical, report, voice, auth
 
 # --- RAG Module Imports ---
 from modules.rag.file_processor import FileProcessor
@@ -51,11 +52,10 @@ async def health_check():
         "active_modules": ["RAG", "NLP", "Voice", "Technical Evaluation"]
     }
 
-# ============================================================
-# 📄 RESUME UPLOAD & PROCESSING
-# ============================================================
+from routes.auth import get_collection_name
+
 @app.post("/upload-resume")
-async def upload_resume(file: UploadFile = File(...)):
+async def upload_resume(file: UploadFile = File(...), x_user_email: Optional[str] = Header(None)):
     """
     Handles Resume uploads. Extracts text, chunks it, 
     and stores it in the Vector Database (ChromaDB).
@@ -76,9 +76,12 @@ async def upload_resume(file: UploadFile = File(...)):
         # 3. Chunking for Vector DB precision
         chunks = chunk_text(raw_text)
         
-        # 4. Store each chunk in ChromaDB
+        # 4. Store each chunk in ChromaDB (isolated if user email is present)
+        coll_name = get_collection_name(x_user_email) if x_user_email else "interview_data"
+        user_vector_db = VectorStore(collection_name=coll_name)
+        
         for i, chunk in enumerate(chunks):
-            vector_db.add_document(
+            user_vector_db.add_document(
                 doc_id=f"{file.filename}_{i}",
                 text=chunk,
                 metadata={"source": file.filename, "type": "resume"}
@@ -132,6 +135,7 @@ app.include_router(interview.router, prefix="/api/interview", tags=["Interview"]
 app.include_router(technical.router, prefix="/api/technical", tags=["Technical"])
 app.include_router(report.router, prefix="/api/report", tags=["Report"])
 app.include_router(voice.router, prefix="/api/voice", tags=["Voice"])
+app.include_router(auth.router, prefix="/api/auth", tags=["Auth"])
 
 if __name__ == "__main__":
     # Start the server on port 8000

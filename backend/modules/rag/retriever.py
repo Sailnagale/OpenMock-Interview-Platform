@@ -16,12 +16,21 @@ class Retriever:
             logger.error(f"❌ Retriever: Failed to initialize VectorStore: {e}")
             self.store = None
 
-    def get_relevant_context(self, query: str, n_results: int = 3):
+    def get_relevant_context(self, query: str, n_results: int = 3, collection_name: str = "interview_data"):
         """
         Primary method used by interview_service.py.
         Retrieves the most relevant chunks from the resume based on the query.
         """
-        if not self.store:
+        # Dynamically switch/load user-specific store if specified
+        store = self.store
+        if collection_name != "interview_data":
+            try:
+                store = VectorStore(collection_name=collection_name)
+            except Exception as e:
+                logger.error(f"❌ RAG: Failed to load user collection {collection_name}: {e}")
+                store = self.store
+
+        if not store:
             logger.warning("⚠️ Retriever: Store not initialized. Returning empty context.")
             return ""
 
@@ -29,16 +38,16 @@ class Retriever:
             # Clean the query to focus on technical/role keywords
             search_query = f"Experience, projects, and skills related to {query}"
             
-            results = self.store.query(search_query, n_results=n_results)
+            results = store.query(search_query, n_results=n_results)
             
             # ChromaDB returns results in a nested list format: {'documents': [['chunk1', 'chunk2']]}
             if results and 'documents' in results and results['documents'] and len(results['documents'][0]) > 0:
                 documents = results['documents'][0]
                 context_str = "\n\n".join(documents)
-                logger.info(f"🧠 RAG: Successfully retrieved {len(documents)} context chunks.")
+                logger.info(f"🧠 RAG: Successfully retrieved {len(documents)} context chunks from collection '{collection_name}'.")
                 return context_str
             
-            logger.info("ℹ️ RAG: No matching context found in Vector Database.")
+            logger.info(f"ℹ️ RAG: No matching context found in collection '{collection_name}'.")
             return ""
             
         except Exception as e:

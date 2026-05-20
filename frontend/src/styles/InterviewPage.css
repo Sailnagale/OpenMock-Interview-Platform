@@ -461,9 +461,8 @@
     margin-left: 8px;
 }
 
-.chat-messages > div:nth-child(2) {
-    display: none !important;
-}
+/* Hidden child rule removed to fix chat rendering bug */
+
 
 .panel-editor {
     height: 100%;

@@ -17,6 +17,22 @@ export const InterviewProvider = ({ children }) => {
   const [questionResults, setQuestionResults] = useState([]);
   const [phase, setPhase] = useState("intro"); // 'intro' | 'loading' | 'quiz' | 'done'
 
+  // User auth state
+  const [user, setUser] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("openmock_user") || "null");
+    } catch {
+      return null;
+    }
+  });
+
+  // Progressive Coding Round sub-phases: 'coding' | 'evaluating' | 'followup1' | 'followup2' | 'done'
+  const [technicalPhase, setTechnicalPhase] = useState("coding");
+  const [submittedCode, setSubmittedCode] = useState("");
+  const [followUps, setFollowUps] = useState([]);
+  const [currentScore, setCurrentScore] = useState(0);
+  const [technicalIntroStage, setTechnicalIntroStage] = useState(0);
+
   const addMessage = (role, content) => {
     setHistory((prev) => [...prev, { role, content }]);
   };
@@ -33,15 +49,23 @@ export const InterviewProvider = ({ children }) => {
     });
   };
 
+  const logout = () => {
+    localStorage.removeItem("openmock_user");
+    setUser(null);
+  };
+
   const reset = () => {
     setHistory([]);
     setTechnicalCritiques([]);
-    // We keep jobRole here because the user usually wants to keep their role
-    // if they restart a session from the landing page.
     setQuestions([]);
     setCurrentQuestionIdx(0);
     setQuestionResults([]);
     setPhase("intro");
+    setTechnicalPhase("coding");
+    setSubmittedCode("");
+    setFollowUps([]);
+    setCurrentScore(0);
+    setTechnicalIntroStage(0);
   };
 
   return (
@@ -67,9 +91,23 @@ export const InterviewProvider = ({ children }) => {
         currentQuestionIdx,
         setCurrentQuestionIdx,
         questionResults,
+        setQuestionResults,
         addQuestionResult,
         phase,
         setPhase,
+        user,
+        setUser,
+        logout,
+        technicalPhase,
+        setTechnicalPhase,
+        submittedCode,
+        setSubmittedCode,
+        followUps,
+        setFollowUps,
+        currentScore,
+        setCurrentScore,
+        technicalIntroStage,
+        setTechnicalIntroStage,
         reset,
       }}
     >

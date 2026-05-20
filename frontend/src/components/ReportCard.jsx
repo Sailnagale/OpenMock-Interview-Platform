@@ -1,4 +1,5 @@
 import React from "react";
+import { useInterview } from "../store/interviewStore";
 import "../styles/ReportCard.css";
 
 const ProgressBar = ({ label, score }) => {
@@ -18,6 +19,7 @@ const ProgressBar = ({ label, score }) => {
 
 export default function ReportCard({ data }) {
   if (!data) return null;
+  const { questionResults, interviewType } = useInterview();
 
   return (
     <div className="report-card-main">
@@ -78,6 +80,51 @@ export default function ReportCard({ data }) {
           </div>
         </div>
       </section>
+
+      {/* 4. PROGRESSIVE CODING ROUND DETAILS */}
+      {interviewType === "technical" && questionResults && questionResults.length > 0 && (
+        <section className="report-section">
+          <h3 className="section-title">💻 4. Technical Coding Round Details</h3>
+          <div style={{ display: "flex", flexDirection: "column", gap: "16px", marginTop: "12px" }}>
+            {questionResults.map((res, idx) => {
+              if (!res) return null;
+              const statusColor =
+                res.verdict === "PASS"
+                  ? "#10b981"
+                  : res.verdict === "PARTIAL"
+                  ? "#f59e0b"
+                  : "#ef4444";
+              return (
+                <div key={idx} style={{
+                  background: "rgba(255, 255, 255, 0.02)",
+                  border: "1px solid rgba(255, 255, 255, 0.06)",
+                  borderLeft: `4px solid ${statusColor}`,
+                  padding: "16px",
+                  borderRadius: "8px"
+                }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+                    <h4 style={{ margin: 0, color: "#fff", fontSize: "15px" }}>Challenge {idx + 1} ({res.difficulty?.toUpperCase()})</h4>
+                    <span style={{
+                      background: statusColor,
+                      color: "#fff",
+                      fontSize: "11px",
+                      fontWeight: "700",
+                      padding: "4px 8px",
+                      borderRadius: "4px"
+                    }}>{res.verdict}</span>
+                  </div>
+                  <div style={{ fontSize: "13px", color: "var(--text-muted)", marginBottom: "8px" }}>
+                    Score: <strong style={{ color: "#fff" }}>{res.score}/100</strong>
+                  </div>
+                  {res.feedback && (
+                    <p style={{ margin: 0, fontSize: "13px", color: "var(--text-muted)", lineHeight: "1.5" }}>{res.feedback}</p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       {/* 8. IMPROVEMENT PLAN */}
       <section className="report-section">

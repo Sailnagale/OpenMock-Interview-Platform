@@ -25,8 +25,9 @@ export default function QuestionTracker({ questions, results, currentIdx, onSele
                     <button
                         key={i}
                         className={`tracker-item ${i === currentIdx ? 'active' : ''} ${results[i] ? 'done' : ''}`}
-                        onClick={() => onSelect(i)}
-                        title={q}
+                        onClick={() => q !== "Pending..." && onSelect(i)}
+                        disabled={q === "Pending..."}
+                        title={q === "Pending..." ? "Question not generated yet" : q}
                     >
                         <span className="tracker-num">Q{i + 1}</span>
                         {getIcon(i)}

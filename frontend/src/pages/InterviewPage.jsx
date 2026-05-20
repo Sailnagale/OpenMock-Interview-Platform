@@ -16,16 +16,31 @@ export default function InterviewPage() {
     lmStudioUrl,
     history,
     addMessage,
+    setHistory,
     technicalCritiques,
     addCritique,
     jobRole,
     questions,
+    setQuestions,
     currentQuestionIdx,
     setCurrentQuestionIdx,
     questionResults,
     addQuestionResult,
+    setQuestionResults,
     phase,
     setPhase,
+    user,
+    technicalPhase,
+    setTechnicalPhase,
+    submittedCode,
+    setSubmittedCode,
+    followUps,
+    setFollowUps,
+    currentScore,
+    setCurrentScore,
+    technicalIntroStage,
+    setTechnicalIntroStage,
+    reset,
   } = useInterview();
 
   const [userInput, setUserInput] = useState("");
@@ -40,6 +55,52 @@ export default function InterviewPage() {
   const messagesEndRef = useRef(null);
   const effectRan = useRef(false);
   const isTechnical = interviewType === "technical";
+
+  // --- VOICE STABILITY & TTS PLAYBACK ---
+  const currentAudioRef = useRef(null);
+
+  const speakText = async (text) => {
+    if (!text) return;
+    
+    if (currentAudioRef.current) {
+      try {
+        currentAudioRef.current.pause();
+      } catch (e) {}
+    }
+
+    const cleanText = text
+      .replace(/[#*`_\-]/g, " ")
+      .replace(/\[METADATA:.*?\]/g, "")
+      .trim();
+
+    if (!cleanText) return;
+
+    try {
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      if (AudioContext) {
+        const tempCtx = new AudioContext();
+        if (tempCtx.state === "suspended") {
+          await tempCtx.resume();
+        }
+      }
+
+      const res = await axios.post(`${backendUrl}/api/voice/tts`, { text: cleanText });
+      if (res.data && res.data.audio) {
+        const audio = new Audio("data:audio/mp3;base64," + res.data.audio);
+        currentAudioRef.current = audio;
+        await new Promise((resolve) => {
+          audio.onended = resolve;
+          audio.onerror = resolve;
+          audio.play().catch((e) => {
+            console.error("Autoplay/Audio play blocked or failed:", e);
+            resolve();
+          });
+        });
+      }
+    } catch (err) {
+      console.error("TTS speech failed:", err);
+    }
+  };
 
   // --- VOICE STATES ---
   const [isRecording, setIsRecording] = useState(false);
@@ -78,7 +139,7 @@ export default function InterviewPage() {
     return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
-  // ================= INITIALIZATION (FIXED FOR STREAMING) =================
+  // ================= INITIALIZATION =================
   useEffect(() => {
     if (effectRan.current || initialized) return;
     setInitialized(true);
@@ -89,7 +150,6 @@ export default function InterviewPage() {
       setIsSending(true);
 
       try {
-        // ✅ CHANGED: Using fetch() instead of axios.post() to handle the Stream
         const response = await fetch(
           `${backendUrl}/api/interview/start-or-followup`,
           {
@@ -101,6 +161,9 @@ export default function InterviewPage() {
               interview_type: interviewType,
               job_role: displayRole,
               current_question_id: currentQuestionId,
+              user_email: user?.email || "",
+              technical_phase: isTechnical ? "intro" : "coding",
+              technical_intro_stage: 0
             }),
           },
         );
@@ -114,21 +177,41 @@ export default function InterviewPage() {
           if (done) break;
           const chunk = decoder.decode(value);
           fullContent += chunk;
-          setStreamingText(fullContent); // Show AI typing live
+          setStreamingText(fullContent);
         }
 
         addMessage("assistant", fullContent);
         setStreamingText("");
+        
+        speakText(fullContent);
 
         if (isTechnical) {
-          setPhase("quiz");
+          setTechnicalPhase("intro");
+          setTechnicalIntroStage(1);
+          setQuestions(["Pending...", "Pending...", "Pending..."]);
+          setCurrentQuestionIdx(0);
+          
+          (async () => {
+            try {
+              const qRes = await axios.post(`${backendUrl}/api/technical/generate-questions`, {
+                job_role: displayRole,
+                count: 1,
+                difficulty: "easy"
+              });
+              const q1 = qRes.data.questions[0] || "Given an array of integers, return indices of the two numbers such that they add up to a specific target.";
+              setQuestions([q1, "Pending...", "Pending..."]);
+            } catch (err) {
+              console.error("Coding initial question generation error:", err);
+              const fallbackQ = "Given an array of integers, return indices of the two numbers such that they add up to a specific target.";
+              setQuestions([fallbackQ, "Pending...", "Pending..."]);
+            }
+          })();
         }
       } catch (err) {
         console.error("Init Error:", err);
         addMessage(
           "assistant",
-          "⚠️ Failed to connect to AI. Please ensure the backend is running at " +
-            backendUrl,
+          "⚠️ Failed to connect to AI. Please ensure backend is running at " + backendUrl
         );
       } finally {
         setIsSending(false);
@@ -145,6 +228,10 @@ export default function InterviewPage() {
     setPhase,
     addMessage,
     initialized,
+    user,
+    setQuestions,
+    setCurrentQuestionIdx,
+    setTechnicalPhase
   ]);
 
   const handleEndInterview = () => {
@@ -175,6 +262,14 @@ export default function InterviewPage() {
           history,
           interview_type: interviewType,
           job_role: jobRole,
+          user_email: user?.email || "",
+          technical_phase: technicalPhase,
+          technical_intro_stage: isTechnical && technicalPhase === "intro" ? technicalIntroStage : undefined,
+          current_question_idx: currentQuestionIdx,
+          current_question_text: questions[currentQuestionIdx] || "",
+          submitted_code: submittedCode,
+          current_score: currentScore,
+          follow_ups: followUps
         }),
       });
 
@@ -191,8 +286,93 @@ export default function InterviewPage() {
         setStreamingText(full);
       }
 
-      addMessage("assistant", full);
+      let assistantMessage = full;
+      let meta = null;
+
+      const metadataMatch = full.match(/\[METADATA:\s*(\{[\s\S]*?\})\]/);
+      if (metadataMatch) {
+        try {
+          meta = JSON.parse(metadataMatch[1]);
+          assistantMessage = full.replace(/\[METADATA:\s*\{[\s\S]*?\}\]/, "").trim();
+        } catch (e) {
+          console.error("Failed to parse stream metadata:", e);
+        }
+      }
+
+      addMessage("assistant", assistantMessage);
       setStreamingText("");
+
+      speakText(assistantMessage);
+
+      if (isTechnical && technicalPhase === "intro") {
+        setTechnicalIntroStage((prev) => prev + 1);
+      }
+
+      if (meta) {
+        if (meta.score_adjustment !== undefined) {
+          const currentResult = questionResults[currentQuestionIdx];
+          if (currentResult) {
+            const adjustedScore = Math.max(0, Math.min(100, currentResult.score + meta.score_adjustment));
+            addQuestionResult(currentQuestionIdx, {
+              ...currentResult,
+              score: adjustedScore
+            });
+          }
+        }
+
+        if (meta.next_phase) {
+          setTechnicalPhase(meta.next_phase);
+        }
+
+        if (meta.transition_to_coding) {
+          setTechnicalPhase("coding");
+          setPhase("quiz");
+          
+          const currentQ1 = questions[0];
+          if (currentQ1 && currentQ1 !== "Pending...") {
+            // Already generated at start, just reuse and display!
+            const welcomeCodingMsg = `### Coding Challenge 1 (EASY)\n\n${currentQ1}`;
+            addMessage("assistant", welcomeCodingMsg);
+            const shortQTitle = currentQ1.split("\n")[0] || "Coding Challenge 1";
+            speakText(`I have generated Coding Challenge 1: ${shortQTitle}. Please review the description and write your solution in the editor panel on the right.`);
+          } else {
+            // Fallback generation if not pre-loaded for some reason
+            setQuestions(["Pending...", "Pending...", "Pending..."]);
+            setCurrentQuestionIdx(0);
+            setIsSending(true);
+            setTimeout(async () => {
+              const displayRole = jobRole || "Software Engineer";
+              try {
+                const qRes = await axios.post(`${backendUrl}/api/technical/generate-questions`, {
+                  job_role: displayRole,
+                  count: 1,
+                  difficulty: "easy"
+                });
+                const q1 = qRes.data.questions[0] || "Given an array of integers, return indices of the two numbers such that they add up to a specific target.";
+                
+                setQuestions([q1, "Pending...", "Pending..."]);
+                setCurrentQuestionIdx(0);
+
+                const welcomeCodingMsg = `### Coding Challenge 1 (EASY)\n\n${q1}`;
+                addMessage("assistant", welcomeCodingMsg);
+                
+                const shortQTitle = q1.split("\n")[0] || "Coding Challenge 1";
+                speakText(`I have generated Coding Challenge 1: ${shortQTitle}. Please review the description and write your solution in the editor panel on the right.`);
+              } catch (err) {
+                console.error("Coding transition question generation error:", err);
+                const fallbackQ = "Given an array of integers, return indices of the two numbers such that they add up to a specific target.";
+                setQuestions([fallbackQ, "Pending...", "Pending..."]);
+                setCurrentQuestionIdx(0);
+                const welcomeCodingMsg = `### Coding Challenge 1 (EASY)\n\n${fallbackQ}`;
+                addMessage("assistant", welcomeCodingMsg);
+                speakText("I had trouble generating the challenge online, so I've loaded a fallback coding question. Please review the details in the editor panel.");
+              } finally {
+                setIsSending(false);
+              }
+            }, 100);
+          }
+        }
+      }
     } catch {
       addMessage("assistant", "⚠️ Network error.");
     } finally {
@@ -310,19 +490,105 @@ export default function InterviewPage() {
   };
 
   const goToQuestion = (idx) => {
+    if (questions[idx] === "Pending...") return;
     setCurrentQuestionIdx(idx);
     addMessage("assistant", `📝 Question ${idx + 1}: ${questions[idx]}`);
   };
 
   const handleSubmitResult = (result) => {
-    addQuestionResult(currentQuestionIdx, result);
-    addMessage(
-      "assistant",
-      `Verdict: ${result.verdict} | Score: ${result.score}`,
-    );
+    addQuestionResult(currentQuestionIdx, {
+      verdict: result.verdict,
+      score: result.score,
+      feedback: result.feedback,
+      difficulty: currentQuestionIdx === 0 ? "easy" : (currentQuestionIdx === 1 ? "medium" : "hard")
+    });
+
+    setTechnicalPhase("followup1");
+    setSubmittedCode(result.submittedCode || "");
+    setFollowUps(result.all_follow_ups || [result.follow_up]);
+    setCurrentScore(result.score);
+
+    const subMessage = `### Code Submitted Successfully!\n\n**Verdict:** ${result.verdict}\n**Score:** ${result.score}/100\n\n**Critique:**\n${result.feedback}\n\n**Follow-up Question 1:** ${result.follow_up}`;
+    addMessage("assistant", subMessage);
+
+    const spokenMessage = `Your code scored ${result.score} points with a verdict of ${result.verdict}. Here is my follow up question: ${result.follow_up}`;
+    speakText(spokenMessage);
   };
 
-  const isQuizMode = isTechnical && phase === "quiz";
+  const handleNextQuestion = async () => {
+    if (currentQuestionIdx >= 2) {
+      setPhase("done");
+      const doneMsg = "Excellent! You have successfully completed all progressive coding rounds. You can now wrap up the session and generate your report by clicking the **'Finish Interview'** button.";
+      addMessage("assistant", doneMsg);
+      speakText(doneMsg);
+      return;
+    }
+
+    const nextIdx = currentQuestionIdx + 1;
+    
+    // Set next element to Pending... and increment index immediately to trigger loading skeletons
+    setQuestions((prev) => {
+      const updated = [...prev];
+      updated[nextIdx] = "Pending...";
+      return updated;
+    });
+    setCurrentQuestionIdx(nextIdx);
+    setTechnicalPhase("coding");
+    setSubmittedCode("");
+    setFollowUps([]);
+    setCurrentScore(0);
+    
+    setIsSending(true);
+    setStreamingText("Analyzing performance & generating next progressive coding challenge...");
+
+    try {
+      const prevResult = questionResults[currentQuestionIdx] || { score: 70, difficulty: "easy" };
+      const prevScore = prevResult.score;
+      const prevDiff = prevResult.difficulty || "easy";
+
+      const res = await axios.post(`${backendUrl}/api/technical/next-question`, {
+        job_role: jobRole || "Software Engineer",
+        current_question_idx: nextIdx,
+        previous_score: prevScore,
+        previous_difficulty: prevDiff
+      });
+
+      const nextQ = res.data.question;
+      const nextDifficulty = res.data.difficulty;
+
+      setQuestions((prev) => {
+        const updated = [...prev];
+        updated[nextIdx] = nextQ;
+        return updated;
+      });
+
+      const introMessage = `### Coding Challenge ${nextIdx + 1} (${nextDifficulty.toUpperCase()})\n\n${nextQ}`;
+      addMessage("assistant", introMessage);
+      
+      const shortQTitle = nextQ.split("\n")[0] || `Coding Challenge ${nextIdx + 1}`;
+      speakText(`I have generated Coding Challenge ${nextIdx + 1}: ${shortQTitle}. Please review the details in the editor panel.`);
+    } catch (err) {
+      console.error("Next question generation failed:", err);
+      const fallbackQuestions = [
+        "Given a string containing just the characters '(', ')', '{', '}', '[' and ']', determine if the input string is valid.",
+        "Given an unsorted integer array, find the smallest missing positive integer."
+      ];
+      const fallbackQ = fallbackQuestions[nextIdx - 1] || "Given a string containing just the characters '(', ')', '{', '}', '[' and ']', determine if the input string is valid.";
+      setQuestions((prev) => {
+        const updated = [...prev];
+        updated[nextIdx] = fallbackQ;
+        return updated;
+      });
+      const introMessage = `### Coding Challenge ${nextIdx + 1} (MEDIUM)\n\n${fallbackQ}`;
+      addMessage("assistant", introMessage);
+      speakText(`I had trouble generating the challenge online, so I've loaded a fallback coding question. Please review the details in the editor panel.`);
+    } finally {
+      setStreamingText("");
+      setIsSending(false);
+    }
+  };
+
+  const isQuizMode = isTechnical;
 
   return (
     <div className={`interview-layout ${isQuizMode ? "quiz-mode" : ""}`}>
@@ -408,11 +674,16 @@ export default function InterviewPage() {
             isTechnical={isTechnical}
             isQuizMode={isQuizMode}
             currentQuestion={questions[currentQuestionIdx] || ""}
+            questionText={questions[currentQuestionIdx] || ""}
+            questionNumber={currentQuestionIdx + 1}
             currentIdx={currentQuestionIdx}
             totalQuestions={questions.length}
             jobRole={jobRole}
             onSubmitResult={handleSubmitResult}
+            onNextQuestion={handleNextQuestion}
             lastResult={questionResults[currentQuestionIdx] || null}
+            technicalPhase={technicalPhase}
+            codingRoundStarted={phase === "quiz"}
           />
         </div>
       </div>

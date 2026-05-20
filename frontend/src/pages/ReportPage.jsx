@@ -14,6 +14,7 @@ export default function ReportPage() {
     questionResults,
     reset,
     interviewType,
+    user,
   } = useInterview();
 
   const [reportData, setReportData] = useState(null);
@@ -54,6 +55,22 @@ export default function ReportPage() {
       }
 
       setReportData(res.data);
+
+      // Persist session performance if user is logged in
+      if (user?.email) {
+        try {
+          await axios.post(`${backendUrl}/api/auth/save-session`, {
+            user_email: user.email,
+            session_type: interviewType,
+            history: history,
+            critiques: technicalCritiques || [],
+            results: questionResults || [],
+            report: res.data.executive_summary?.performance || "Session completed successfully."
+          });
+        } catch (saveErr) {
+          console.error("Failed to save session context to history:", saveErr);
+        }
+      }
     } catch (err) {
       console.error("Report error:", err);
       setError(
